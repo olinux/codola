@@ -26,16 +26,25 @@ public class ApplicationSetup {
     Git git;
 
     @Inject
+    SSHKey sshKey;
+
+    @Inject
     ShellUtils shell;
+
+    @Inject
+    Configuration configuration;
 
     @PostConstruct
     public void setup() throws IOException, InterruptedException {
         if(shell.touch(INSTALLMARKER)) {
             git.install();
             latex.install();
+            sshKey.install();
         }
         git.pullAllGitRepos();
         latex.updateCTANPackages();
     }
+
+
 
 }

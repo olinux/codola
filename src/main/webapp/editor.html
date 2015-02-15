@@ -1,0 +1,143 @@
+<!doctype html>
+<html ng-app="codola">
+<head>
+    <meta charset="utf-8"/>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoDoLa</title>
+
+    <script src="http://code.jquery.com/jquery-2.1.3.min.js"></script>
+
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css"/>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="http://getbootstrap.com/docs-assets/js/html5shiv.js"></script>
+    <script src="http://getbootstrap.com/docs-assets/js/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- Firebase -->
+    <script src="https://cdn.firebase.com/js/client/2.0.2/firebase.js"></script>
+
+    <!-- ACE and its JavaScript mode and theme files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.3/ace.js"></script>
+
+    <!-- Firepad -->
+    <link rel="stylesheet" href="https://cdn.firebase.com/libs/firepad/1.1.0/firepad.css"/>
+    <script src="https://cdn.firebase.com/libs/firepad/1.1.0/firepad.min.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.11/angular.min.js"></script>
+
+    <script src="pdf/build/pdf.js"></script>
+    <script src="codola.js"></script>
+
+    <link href="css/rdash.css" rel="stylesheet">
+    <link rel="stylesheet" href="codola.css"/>
+    <script>
+        initCodola('https://intense-heat-7510.firebaseio.com/firepads/');
+    </script>
+</head>
+
+<body class="hamburg">
+<div id="page-wrapper" class="open">
+
+    <!-- Sidebar -->
+
+    <div id="sidebar-wrapper" ng-controller="FirepadController">
+        <ul class="sidebar">
+            <li class="sidebar-main">
+
+                    <input ng-model="searchText" class="form-control searchField" placeholder="File filter">
+                    <label><input type="checkbox" ng-model="filterFiles" /> Hide temporary files</label>
+            </li>
+            <li class="sidebar-title"><span>FILES</span> </li>
+            <li ng-if="file.directory || showFile(file.name)" class="sidebar-title {{file.directory ? 'sidebar-dir' : ''}} {{currentFile==file.name ? 'active' : ''}}"
+                ng-repeat="file in files">
+                <a onclick="$(this).parent().toggleClass('open');" ng-if="file.directory">
+                    <span ng-if="file.symlink" class="glyphicon glyphicon-share-alt" aria-hidden="true">{{file.name}}</span>
+                    <span ng-if="!file.symlink" class="glyphicon glyphicon-directory" aria-hidden="true">{{file.name}}</span>
+                </a>
+                <ul ng-if="file.directory" ng-repeat="subfile in file.subelements">
+                    <li ng-if="!subfile.directory && showFile(subfile.name)" class="{{currentFile==file.name+'/'+subfile.name ? 'active' : ''}}">
+                        <a ng-click="loadFile(file.name+'/'+subfile.name)"><span class="glyphicon glyphicon-file"
+                                                                                 aria-hidden="true"></span>{{subfile.name}}</a>
+                    </li>
+                </ul>
+                <a ng-if="!file.directory" ng-click="loadFile(file.name)">
+                    <span class="glyphicon {{file.mainFile ? 'glyphicon-book' : 'glyphicon-file'}}" aria-hidden="true"></span>{{file.name}}</a>
+            </li>
+            <li class="sidebar-title"><span></span></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="col-xs-6">
+
+            </div>
+            <div class="col-xs-6">
+                <a href="#">
+                    Support
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- End Sidebar -->
+
+    <div id="content-wrapper" class="fullheight">
+        <div class="page-content fullheight">
+
+            <!-- Header Bar -->
+
+            <div class="row header">
+                <div class="col-xs-12">
+                    <div class="user pull-right">
+
+                        <div class="item dropdown">
+                            <a href="#" class="dropdown-toggle">
+                                <i class="fa fa-bell-o"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-right">
+                                <li class="dropdown-header">
+                                    Notifications
+                                </li>
+                                <li class="divider"></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="meta">
+                        <div class="page">
+                            Edit
+                        </div>
+                        <div class="breadcrumb-links">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- End Header Bar -->
+
+            <!-- Main Content -->
+            <div class="row mainrow">
+                <div class="col-xs-8 fullheight">
+                    <div class="widget fullheight">
+                        <div id="firepadContainer" class="fullheight"></div>
+                    </div>
+                </div>
+                <div class="col-xs-4 fullheight">
+                    <div class="widget fullheight">
+                        <div id="preview" ng-controller="PreviewController">
+                            <iframe id="pdfcanvas" src="{{previewData}}"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End Page Content -->
+        </div>
+        <!-- End Content Wrapper -->
+    </div>
+    <!-- End Page Wrapper -->
+</div>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!doctype html>
+<html ng-app="codola">
+<head>
+    <meta charset="utf-8"/>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoDoLa</title>
+
+    <script src="http://code.jquery.com/jquery-2.1.3.min.js"></script>
+
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css"/>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="http://getbootstrap.com/docs-assets/js/html5shiv.js"></script>
+    <script src="http://getbootstrap.com/docs-assets/js/respond.min.js"></script>
+    <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.11/angular.min.js"></script>
+
+    <script src="codola.js"></script>
+
+    <link href="css/rdash.css" rel="stylesheet">
+    <link rel="stylesheet" href="codola.css"/>
+</head>
+
+<body class="hamburg">
+<div id="page-wrapper" class="nonavig">
+
+
+    <div id="content-wrapper" class="fullheight">
+        <div class="page-content fullheight">
+            <!-- Main Content -->
+            <div class="row" style="height:4em;">
+                <img src="img/codola.png" style="opacity:0.5; height:7em;"/>
+            </div>
+
+            <div class="row">
+                <div class="col-md-2"></div>
+                <div class="col-md-8">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            <h3 class="panel-title"><i class="fa fa-bar-chart-o"></i> GIT-managed documents
+                                <button type="button" class="btn btn-default btn-sm pull-right" data-toggle="modal"
+                                        data-target="#addGitDoc">
+                                    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>Add
+                                </button>
+                            </h3>
+
+                        </div>
+                        <div class="panel-body">
+
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                </div>
+
+            </div>
+
+            <div class="row" ng-controller="MainMenuController">
+                <div class="col-md-2"></div>
+                <div class="col-md-8">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            <h3 class="panel-title"><i class="fa fa-bar-chart-o"></i> Uploaded documents</h3>
+                        </div>
+                        <div class="panel-body">
+                            <div class="alert alert-warning" role="alert">
+                                Uploaded documents are temporary resources only. You can edit and rebuild them - but
+                                this is meant for small adaptations/corrections only.<br/>In general, it is recommended
+                                to use Git-managed document instead!
+                            </div>
+                            <div ng-repeat="doc in documents">
+                                <a href="editor.html?{{doc.uuid}}">{{doc.uuid}}</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-primary" ng-click="test()">Add document</button>
+                </div>
+            </div>
+            <!-- End Page Content -->
+            <!-- End Page Wrapper -->
+
+
+            <!-- Modals -->
+            <div class="modal fade" id="addGitDoc" tabindex="-1" role="dialog" aria-labelledby="addGitDocLabel"
+                 aria-hidden="true" ng-controller="AddGitDocumentController">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                    aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title" id="addGitDocLabel">Add Git-managed document</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group ">
+                                <label>GIT-Repository</label>
+                                <div class="btn-group">
+                                    <label class="btn btn-primary{{gittype=='default' ? ' active' : ''}}">
+                                        <input type="radio" ng-model="gittype" value="default"/>
+                                        Default
+                                    </label>
+                                    <label class="btn btn-primary{{gittype=='dedicated' ? ' active' : ''}}">
+                                        <input type="radio" ng-model="gittype" value="dedicated"/>
+                                        Dedicated
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group" ng-show="gittype=='dedicated'">
+                                <label>URL</label>
+                                <input type="text" class="form-control" ng-model="giturl" splaceholder="Git-URL" required>
+                                Please make sure, that CoDoLa has write permission on the GIT-Repo.<br/>
+                                For authentication, you can use <a data-toggle="collapse" href="#sshKey" aria-expanded="false" aria-controls="sshKey">this public SSH-Key</a>
+                                <div class="collapse" id="sshKey"><pre>{{publicKey}}</pre>
+                                </div>
+                            </div>
+                            <div class="form-group ">
+                                <label>Name</label>
+                                <input type="text" class="form-control" ng-model="docname" placeholder="Document name" required>
+                            </div>
+                            <div class="form-group ">
+                                <label>Main document</label>
+                                <input type="text" class="form-control" ng-model="maindoc" placeholder="Main document"  required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" ng-click="test()">Add document</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Content Wrapper -->
+    </div>
+
+</div>
+</body>
+</html>

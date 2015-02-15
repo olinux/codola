@@ -1,0 +1,16 @@
+Thi
+
+
+Third-Party Libraries:
+JQuery MIT https://jquery.org/license/
+Bootstrap MIT http://getbootstrap.com/getting-started/#license-faqs
+Font-Awesome MIT & SIL OFL 1.1 http://fortawesome.github.io/Font-Awesome/license/
+html5shiv MIT or GPL 2.0 https://github.com/aFarkas/html5shiv/blob/master/MIT%20and%20GPL2%20licenses.md
+respond.js MIT
+firebase https://www.firebase.com/terms/terms-of-service.html
+ACE BSD-License http://ace.c9.io/
+Firepad MIT  http://www.firepad.io/
+Angular MIT https://angularjs.org/
+PDF.js Apache 2.0
+RDash MIT
+

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app id="codola" version="3.0" xmlns="http://java.sun.com/xml/ns/javaee" >
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>All Access</web-resource-name>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>codola</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+    <login-config>
+        <auth-method>BASIC</auth-method>
+    </login-config>
+
+    <security-role>
+        <description>Role for simple users</description>
+        <role-name>codola</role-name>
+    </security-role>
+</web-app>

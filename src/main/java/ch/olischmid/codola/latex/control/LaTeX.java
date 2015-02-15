@@ -71,11 +71,15 @@ public class LaTeX {
     public LaTeXBuild build(UUID uuid, String document) throws IOException, InterruptedException {
         Path buildPath = getLatexBuildFolder().resolve(uuid.toString());
         if(Files.exists(buildPath)) {
-           Files.createSymbolicLink(buildPath.resolve(Git.TEMPLATE_REPO_DIRECTORY), git.getAbsoluteTemplateDirectory());
-           shell.executeShellScript(getLatexShellScript(), LATEX_SUBFOLDER, buildPath.toString(), FileEndings.LATEX.appendFileEnding(document));
+            Path templateRepoDirectory = buildPath.resolve(Git.TEMPLATE_REPO_DIRECTORY);
+            if(!Files.exists(templateRepoDirectory)) {
+                Files.createSymbolicLink(templateRepoDirectory, git.getAbsoluteTemplateDirectory());
+            }
+            shell.executeShellScript(getLatexShellScript(), LATEX_SUBFOLDER, buildPath.toString(), FileEndings.LATEX.appendFileEnding(document));
         }
         return getLaTeXBuild(uuid, document);
     }
+
 
     public Path getLatexBuildFolder() throws IOException {
         return configuration.getConfigurationRoot().resolve(LATEX_BUILDFOLDER);
@@ -120,7 +124,9 @@ public class LaTeX {
         return null;
     }
 
-
+    public Path getPathForDocument(UUID uuid) throws IOException {
+        return getLatexBuildFolder().resolve(uuid.toString());
+    }
 
     public UUID extractZipFile(InputStream inputStream) throws IOException {
         UUID uuid = UUID.randomUUID();

@@ -1,0 +1,103 @@
+#pdfcanvas{
+    width:100%;
+}
+
+.panel-title{
+    line-height: 2em;
+}
+#page-wrapper.nonavig{
+    padding-left:0px;
+}
+html, body, #page-wrapper, #content-wrapper, .fullheight, #preview, #pdfcanvas, #firepad{
+    height: 100%;
+    min-height: 100%;
+}
+
+ul.sidebar li a{
+    color: grey;
+}
+
+ul.sidebar li ul li a{
+    width: 210px;
+}
+
+ul.sidebar li.active a{
+    color: white;
+}
+
+.mainrow{
+    height: calc(100% - 75px);
+    min-height: calc(100% - 75px);
+}
+
+.row > div.fullheight{
+    margin-bottom:0px;
+    padding-bottom:15px;
+}
+
+#logo{
+    height:2.5em;
+    padding:3px;
+    background-color: rgba(255,255,255,0.4);
+}
+
+ul.sidebar .sidebar-title.sidebar-dir{
+    height:auto;
+}
+
+
+.sidebar-dir ul li{
+    text-indent: 10px;
+}
+
+.glyphicon:before{
+    margin-right: 0.75em;
+}
+
+
+.sidebar-dir ul{
+    height:auto;
+    list-style:none;
+
+}
+
+.sidebar-dir > ul {
+    display:none;
+}
+
+.sidebar-dir.open > ul{
+    display:block;
+}
+
+.sidebar-dir.open .glyphicon-directory:before{
+    content: "\e118"
+}
+
+.glyphicon-directory:before{
+    content: "\e117"
+}
+
+ul.sidebar .sidebar-main{
+    background-color: #2d3e63;
+    height:80px;
+    padding: 5px;
+}
+
+.sidebar-main label{
+    color:#b2bfdc;
+    font-size:12px;
+    line-height: 43px;
+    margin-left:15px;
+}
+
+.sidebar-main label:hover{
+    color:#ffffff;
+
+}
+
+.searchField{
+    background-image:url('img/codola_searchbox.png');
+    background-repeat:no-repeat;
+    padding-left: 115px;
+    margin: 2px;
+}

@@ -8,7 +8,7 @@ echo "Executing PDFLatex ($PDFLATEX) for file $FILE"
 NO_FILES=0
 
 runPdfLatex(){
-	"$PDFLATEX" "$FILE" >> "$LOG_FILE";
+	"$PDFLATEX" -interaction=nonstopmode "$FILE" >> "$LOG_FILE";
 	cat "$LOG_FILE"
 	NEW_NO_FILES=`cat "$LOG_FILE" | grep "No file" | wc -l`;
 	if [ ${NEW_NO_FILES} != ${NO_FILES} ]; then

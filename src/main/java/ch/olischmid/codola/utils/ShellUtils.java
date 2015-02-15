@@ -62,4 +62,8 @@ public class ShellUtils {
         }
         return false;
     }
+
+    public boolean isInstalled(String ){
+
+    }
 }

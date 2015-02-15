@@ -36,7 +36,15 @@ public class LaTeXBuilder {
         return latex.build(uuid, document);
     }
 
+    public LaTeXBuild buildDocument(UUID uuid, String document) throws IOException, InterruptedException {
+        return latex.build(uuid, document);
+    }
+
     public Path getPDFByUUID(UUID uuid) throws IOException {
         return latex.getPDF(uuid);
+    }
+
+    public Path getPathForDocument(UUID uuid) throws IOException {
+        return latex.getPathForDocument(uuid);
     }
 }

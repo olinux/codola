@@ -14,6 +14,11 @@ public enum FileEndings {
     }
 
     public String appendFileEnding(String fileWithoutEnding){
-        return fileWithoutEnding+ending;
+        if(fileWithoutEnding.endsWith(ending)){
+            return fileWithoutEnding;
+        }
+        else {
+            return fileWithoutEnding + ending;
+        }
     }
 }
