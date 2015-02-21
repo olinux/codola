@@ -28,6 +28,10 @@ public class SSHKey {
         }
     }
 
+    public boolean isInstalled() throws IOException {
+        return Files.exists(getPrivateSSHKeyPath());
+    }
+
     public Path getPrivateSSHKeyPath() throws IOException {
         return configuration.getConfigurationRoot().resolve(KEY_FILE_NAME);
     }

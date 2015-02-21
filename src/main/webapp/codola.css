@@ -45,6 +45,9 @@ ul.sidebar .sidebar-title.sidebar-dir{
     height:auto;
 }
 
+ul.sidebar{
+    text-indent: 10px;
+}
 
 .sidebar-dir ul li{
     text-indent: 10px;
@@ -77,10 +80,18 @@ ul.sidebar .sidebar-title.sidebar-dir{
     content: "\e117"
 }
 
-ul.sidebar .sidebar-main{
+.sidebar-main{
     background-color: #2d3e63;
     height:80px;
     padding: 5px;
+    position:absolute;
+    top:0px;
+    left:0px;
+    width:240px;
+}
+ul.sidebar{
+    margin-top:80px;
+    margin-bottom:40px;
 }
 
 .sidebar-main label{
@@ -92,7 +103,10 @@ ul.sidebar .sidebar-main{
 
 .sidebar-main label:hover{
     color:#ffffff;
+}
 
+.progress{
+    margin-bottom:0px;
 }
 
 .searchField{
@@ -100,4 +114,17 @@ ul.sidebar .sidebar-main{
     background-repeat:no-repeat;
     padding-left: 115px;
     margin: 2px;
+}
+
+.modal-body{
+    max-height: 70vh;
+    overflow:auto;
+}
+
+.imagePreview{
+    height:100%;
+}
+
+ul.sidebar .sidebar-title{
+    line-height: 25px;
 }

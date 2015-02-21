@@ -49,14 +49,20 @@ public class LaTeX {
         Files.createDirectories(getLatexBuildFolder());
     }
 
+    public boolean isInstalled() throws IOException {
+       return Files.exists(getLatexBuildFolder());
+    }
+
     private Path getInstallCTanScriptPath() throws IOException {
         return configuration.getConfigurationRoot().resolve(INSTALL_CTAN_SCRIPT);
     }
 
     public void updateCTANPackages() throws IOException, InterruptedException {
-        Path packageList = git.getAbsoluteTemplateDirectory().resolve(ADDITIONAL_CTAN_PACKAGES);
-        if(Files.exists(packageList)) {
-            shell.executeShellScript(getInstallCTanScriptPath(), LATEX_SUBFOLDER, packageList.toString());
+        if(isInstalled()){
+            Path packageList = git.getAbsoluteTemplateDirectory().resolve(ADDITIONAL_CTAN_PACKAGES);
+            if(Files.exists(packageList)) {
+                shell.executeShellScript(getInstallCTanScriptPath(), LATEX_SUBFOLDER, packageList.toString());
+            }
         }
     }
 

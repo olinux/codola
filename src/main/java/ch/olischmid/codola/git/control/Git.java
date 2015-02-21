@@ -63,6 +63,10 @@ public class Git {
         cloneTemplateRepo();
     }
 
+    public boolean isInstalled() throws IOException {
+        return Files.exists(getAbsoluteTemplateDirectory());
+    }
+
 
     private void cloneTemplateRepo() throws IOException, InterruptedException {
         logger.fine("Cloning directory " + TEMPLATE_REPO_DIRECTORY);
@@ -70,10 +74,12 @@ public class Git {
     }
 
     public void pullAllGitRepos() throws IOException, InterruptedException {
-        for (File f : getAbsoluteGitDirectory().toFile().listFiles()) {
-            if (f.isDirectory()) {
-                logger.fine("Pulling directory " + f.getName());
-                shell.executeShellScript(getPullShellScriptPath(), getAbsoluteGitDirectory().toString(), f.getName());
+        if(isInstalled()) {
+            for (File f : getAbsoluteGitDirectory().toFile().listFiles()) {
+                if (f.isDirectory()) {
+                    logger.fine("Pulling directory " + f.getName());
+                    shell.executeShellScript(getPullShellScriptPath(), getAbsoluteGitDirectory().toString(), f.getName());
+                }
             }
         }
     }

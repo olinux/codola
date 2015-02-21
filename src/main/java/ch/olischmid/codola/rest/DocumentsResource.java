@@ -5,8 +5,13 @@ import ch.olischmid.codola.latex.boundary.LaTeXBuilder;
 import ch.olischmid.codola.latex.commons.FileEndings;
 import ch.olischmid.codola.latex.entity.LaTeXBuild;
 import ch.olischmid.codola.rest.models.FileStructure;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import javax.inject.Inject;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -15,9 +20,11 @@ import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -138,14 +145,46 @@ public class DocumentsResource {
         return Response.ok().build();
     }
 
-    @POST
+    @DELETE
     @Path("{uuid}/files/{file}")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response uploadFile(@Context HttpServletRequest request, @PathParam("uuid") String uuid, @PathParam("file") String file) throws IOException, InterruptedException {
+    public Response deleteFile(String content, @PathParam("uuid") String uuid, @PathParam("file") String file) throws IOException, InterruptedException {
         String fileDecoded = URLDecoder.decode(file, StandardCharsets.UTF_8.name());
         java.nio.file.Path p = laTeXBuilder.getPathForDocument(UUID.fromString(uuid)).resolve(fileDecoded);
-
+        Files.deleteIfExists(p);
         return Response.ok().build();
+    }
+
+    @POST
+    @Path("{uuid}/files/{file}")
+    public Response createFile(String content, @PathParam("uuid") String uuid, @PathParam("file") String file) throws IOException, InterruptedException {
+        String fileDecoded = URLDecoder.decode(file, StandardCharsets.UTF_8.name());
+        java.nio.file.Path p = laTeXBuilder.getPathForDocument(UUID.fromString(uuid)).resolve(fileDecoded);
+        Files.createDirectories(p.getParent());
+        Files.createFile(p);
+        return Response.ok().build();
+    }
+
+
+    @POST
+    @Path("{uuid}/files")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public Response post(@Context HttpServletRequest request, @PathParam("uuid")String uuid) throws IOException, URISyntaxException, ServletException, FileUploadException {
+        java.nio.file.Path pathForDocument = laTeXBuilder.getPathForDocument(UUID.fromString(uuid));
+        List<ch.olischmid.codola.rest.models.File.FileMeta> fileInfo = new ArrayList<>();
+        if(ServletFileUpload.isMultipartContent(request)){
+            ServletFileUpload fileUpload = new ServletFileUpload(new DiskFileItemFactory());
+            List<FileItem> fileItems = fileUpload.parseRequest(request);
+            for (FileItem fileItem : fileItems) {
+                String name = fileItem.getName();
+                long size = fileItem.getSize();
+                java.nio.file.Path filePath = pathForDocument.resolve(fileItem.getName());
+                Files.copy(fileItem.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+                String url = "/url";
+                String urlPreview = "/previewUrl";
+                fileInfo.add(new ch.olischmid.codola.rest.models.File.FileMeta(name, size, url, urlPreview));
+            }
+        }
+        ch.olischmid.codola.rest.models.File.Entity entity = new ch.olischmid.codola.rest.models.File.Entity(fileInfo);
+        return Response.ok(entity, MediaType.APPLICATION_JSON).build();
     }
 }
