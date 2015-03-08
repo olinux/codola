@@ -1,6 +1,6 @@
 package ch.olischmid.codola.rest;
 
-import ch.olischmid.codola.config.Configuration;
+import ch.olischmid.codola.app.control.Configuration;
 import ch.olischmid.codola.latex.boundary.LaTeXBuilder;
 
 import javax.inject.Inject;

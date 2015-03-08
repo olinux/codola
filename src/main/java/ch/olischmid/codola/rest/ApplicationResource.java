@@ -1,11 +1,12 @@
 package ch.olischmid.codola.rest;
 
-import ch.olischmid.codola.config.ApplicationSetup;
 import ch.olischmid.codola.config.SSHKey;
-import ch.olischmid.codola.git.control.Git;
+import ch.olischmid.codola.git.control.DefaultGIT;
+import ch.olischmid.codola.git.control.TemplateGIT;
 import ch.olischmid.codola.latex.control.LaTeX;
 import ch.olischmid.codola.rest.models.InstallationState;
 import ch.olischmid.codola.rest.models.InstallationStep;
+import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.inject.Inject;
 import javax.servlet.ServletException;
@@ -26,21 +27,24 @@ import java.util.Arrays;
 public class ApplicationResource {
 
     public static final String CLONETEMPLATEGIT ="cloneTemplateGIT";
+    public static final String CLONEDEFAULTGIT ="cloneDefaultGIT";
     public static final String LATEX ="latex";
     public static final String SSH_KEY ="sshKey";
 
     @Inject
-    ApplicationSetup applicationSetup;
-    @Inject
     SSHKey sshKey;
     @Inject
-    Git git;
+    DefaultGIT defaultGIT;
+    @Inject
+    TemplateGIT templateGIT;
+
     @Inject
     LaTeX latex;
 
     @PUT
-    public void updateApplication() throws IOException, InterruptedException {
-        git.pullAllGitRepos();
+    public void updateApplication() throws IOException, InterruptedException, GitAPIException {
+        templateGIT.getGitRepo();
+        defaultGIT.getGitRepo();
         latex.updateCTANPackages();
     }
 
@@ -54,23 +58,31 @@ public class ApplicationResource {
     @Path("installed")
     public InstallationState getInstallationState() throws IOException {
         InstallationStep ssh = new InstallationStep(SSH_KEY, "SSH Key", sshKey.isInstalled());
-        InstallationStep cloneGitTemplate = new InstallationStep(CLONETEMPLATEGIT, "Clone Template-GIT", git.isInstalled());
-        InstallationStep cloneGitDefault = new InstallationStep(CLONETEMPLATEGIT, "Clone Default-GIT", false);
+        InstallationStep cloneGitTemplate = new InstallationStep(CLONETEMPLATEGIT, "Clone Template-GIT", templateGIT.isInstalled());
+        InstallationStep cloneGitDefault = new InstallationStep(CLONEDEFAULTGIT, "Clone Default-GIT", defaultGIT.isInstalled());
         InstallationStep l = new InstallationStep(LATEX, "Latex", latex.isInstalled());
-        return new InstallationState(applicationSetup.isInstalled(), Arrays.asList(ssh, cloneGitTemplate, cloneGitDefault, l));
+        return new InstallationState(Arrays.asList(ssh, cloneGitTemplate, cloneGitDefault, l));
     }
 
     @POST
     @Path(CLONETEMPLATEGIT)
-    public InstallationState cloneTemplateGIT() throws IOException, InterruptedException {
-        git.install();
-        updateApplication();
+    public InstallationState cloneTemplateGIT() throws IOException, InterruptedException, GitAPIException {
+        //TODO make configurable
+        templateGIT.install("https://github.com/olinux/codola_resources.git");
+        return getInstallationState();
+    }
+
+    @POST
+    @Path(CLONEDEFAULTGIT)
+    public InstallationState cloneDefaultGIT() throws IOException, InterruptedException, GitAPIException {
+        //TODO make configurable
+        defaultGIT.install("file:///home/oli/projects/codola/tmp/defaultrepo.git");
         return getInstallationState();
     }
 
     @POST
     @Path(LATEX)
-    public InstallationState installLatex() throws IOException, InterruptedException {
+    public InstallationState installLatex() throws IOException, InterruptedException, GitAPIException {
         latex.install();
         updateApplication();
         return getInstallationState();
@@ -78,7 +90,7 @@ public class ApplicationResource {
 
     @POST
     @Path(SSH_KEY)
-    public InstallationState createNewSSHKey() throws IOException, InterruptedException {
+    public InstallationState createNewSSHKey() throws IOException, InterruptedException, GitAPIException {
         sshKey.install();
         updateApplication();
         return getInstallationState();
@@ -97,6 +109,7 @@ public class ApplicationResource {
     @GET
     @Path("firebaseUrl")
     public Response getFirebaseURL(){
+        //TODO make configurable
         return Response.ok("https://intense-heat-7510.firebaseio.com/firepads/").type("text/plain").build();
     }
 }

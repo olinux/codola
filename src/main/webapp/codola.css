@@ -53,6 +53,10 @@ ul.sidebar{
     text-indent: 10px;
 }
 
+.sidebar-footer .glyphicon:before{
+    margin-right:0px;
+}
+
 .glyphicon:before{
     margin-right: 0.75em;
 }
@@ -127,4 +131,5 @@ ul.sidebar{
 
 ul.sidebar .sidebar-title{
     line-height: 25px;
+    text-transform: none;
 }

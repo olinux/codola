@@ -9,7 +9,6 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import java.nio.file.Path;
-import java.util.UUID;
 
 /**
  * Created by oli on 29.01.15.
@@ -20,7 +19,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class LaTeXBuild {
 
-    UUID uuid;
+    String id;
 
     String document;
 

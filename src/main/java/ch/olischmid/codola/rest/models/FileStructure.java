@@ -2,10 +2,12 @@ package ch.olischmid.codola.rest.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.eclipse.jgit.lib.ObjectId;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import java.util.Comparator;
 import java.util.List;
 
@@ -19,11 +21,21 @@ import java.util.List;
 public class FileStructure {
 
     final String name;
+    @XmlTransient
+    final ObjectId objectId;
     final boolean directory;
     final boolean symlink;
     final boolean mainFile;
     final List<FileStructure> subelements;
 
+    public FileStructure getSubElement(String name){
+        for(FileStructure subelement : subelements){
+            if(subelement.getName().equals(name)){
+                return subelement;
+            }
+        }
+        return null;
+    }
 
     public static final Comparator<FileStructure> SORTBYTYPEANDNAME  = new Comparator<FileStructure>(){
 

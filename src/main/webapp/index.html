@@ -30,7 +30,7 @@
 <div id="page-wrapper" class="nonavig">
 
 
-    <div id="content-wrapper" class="fullheight">
+    <div id="content-wrapper" class="fullheight" ng-controller="MainMenuController">
         <div class="page-content fullheight">
             <!-- Main Content -->
             <div class="row" style="height:4em;">
@@ -51,7 +51,16 @@
 
                         </div>
                         <div class="panel-body">
-
+                            <table class="table table-striped">
+                                <tbody>
+                                    <tr ng-repeat="doc in defaultDocuments">
+                                        <td><a href="editor.html?default/{{doc.displayName}}">{{doc.displayName}}</a></td>
+                                        <td><button type="button" class="btn btn-default btn-sm pull-right  btn-danger" data-toggle="modal" data-target="#removeGitDoc">
+                                            <span class="glyphicon glyphicon-trash" aria-hidden="true" ng-click="markFileForRemoval(doc)">Remove</span>
+                                        </button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -60,7 +69,27 @@
 
             </div>
 
-            <div class="row" ng-controller="MainMenuController">
+            <div class="modal fade" id="removeGitDoc" tabindex="-1" role="dialog" aria-labelledby="removeGitDocLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                    aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title" id="removeGitDocLabel">Remove Git-managed document</h4>
+                        </div>
+                        <div class="modal-body">
+                            Are you really sure, that you want to remove the document <b>{{markedFileForRemoval.displayName}}</b>? This can not be undone!
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary btn-danger" ng-click="remove()"><span class="glyphicon glyphicon-trash" aria-hidden="true" >Remove</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" >
                 <div class="col-md-2"></div>
                 <div class="col-md-8">
                     <div class="panel panel-primary">
@@ -73,14 +102,16 @@
                                 this is meant for small adaptations/corrections only.<br/>In general, it is recommended
                                 to use Git-managed document instead!
                             </div>
-                            <div ng-repeat="doc in documents">
-                                <a href="editor.html?{{doc.uuid}}">{{doc.uuid}}</a>
-                            </div>
+                            <table class="table table-striped">
+                            <tbody>
+                            <tr ng-repeat="doc in documents">
+                                <td><a href="editor.html?{{doc.uuid}}">{{doc.uuid}}</a></td>
+                            </tr>
+                            </tbody>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-2">
-                    <button type="button" class="btn btn-primary" ng-click="test()">Add document</button>
                 </div>
             </div>
             <!-- End Page Content -->
@@ -112,6 +143,8 @@
                     </div>
                 </div>
             </div>
+
+
 
 
             <div class="modal fade" id="addGitDoc" tabindex="-1" role="dialog" aria-labelledby="addGitDocLabel"
@@ -156,7 +189,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                            <button type="button" class="btn btn-primary" ng-click="test()">Add document</button>
+                            <button type="button" class="btn btn-primary" ng-click="add()">Add document</button>
                         </div>
                     </div>
                 </div>

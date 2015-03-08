@@ -1,6 +1,6 @@
 package ch.olischmid.codola.utils;
 
-import ch.olischmid.codola.config.Configuration;
+import ch.olischmid.codola.app.control.Configuration;
 
 import javax.inject.Inject;
 import java.io.File;

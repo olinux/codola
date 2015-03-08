@@ -145,6 +145,7 @@ angular.module('codola_editor', ['blueimp.fileupload'])
     }])
     .controller('PreviewController', ['$scope', '$rootScope', function ($scope, $rootScope) {
         $scope.previewData = '';
+        $scope.scroll=0;
         $rootScope.$on('documentChanged', function (event) {
             document.getElementById('pdfcanvas').contentWindow.location.reload(true);
             $scope.preview();
@@ -168,7 +169,14 @@ angular.module('codola_editor', ['blueimp.fileupload'])
         '$scope', '$rootScope', '$http',
          function ($scope, $rootScope, $http) {
             $scope.createFile = function() {
-                $http.post('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent($scope.path+'/'+$scope.filename))
+                var fileName;
+                if(typeof($scope.path)!='undefined'){
+                    fileName = $scope.path+'/'+$scope.filename;
+                }
+                else{
+                    fileName = $scope.filename;
+                }
+                $http.post('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent(fileName))
                     .success(function (data, status, headers, config) {
                         // this callback will be called asynchronously
                         // when the response is available
@@ -179,6 +187,32 @@ angular.module('codola_editor', ['blueimp.fileupload'])
                         // or server returns response with an error status.
                     });
             };
+        }
+    ]).controller('PushController', [
+        '$scope', '$rootScope', '$http',
+        function ($scope, $rootScope, $http) {
+            $scope.push = function(){
+                $http.put('rest/documents/' + getIdFromParam(), $scope.message)
+                    .success(function (data, status, headers, config) {
+                    }).
+                    error(function (data, status, headers, config) {
+                    });
+            }
+            $scope.options = {
+                url: 'rest/documents/'+getIdFromParam()+'/files'
+            };
+            $scope.loadingFiles = false;
+            $scope.queue = [];
+            $scope.$on('fileuploadstop', function(event, files){
+                $rootScope.$emit('filesChanged');
+            });
+        }
+    ]).controller('NavigationController', [
+        '$scope', '$rootScope', '$http',
+        function ($scope, $rootScope, $http) {
+            $scope.refresh = function(){
+                $rootScope.$emit('documentChanged');
+            }
         }
     ])
 ;

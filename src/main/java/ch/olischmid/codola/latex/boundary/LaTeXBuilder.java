@@ -1,7 +1,9 @@
 package ch.olischmid.codola.latex.boundary;
 
+import ch.olischmid.codola.docs.entity.Document;
 import ch.olischmid.codola.latex.control.LaTeX;
 import ch.olischmid.codola.latex.entity.LaTeXBuild;
+import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
@@ -33,18 +35,22 @@ public class LaTeXBuilder {
 
     public LaTeXBuild buildFromZip(InputStream zipFile, String document) throws IOException, InterruptedException {
         UUID uuid = latex.extractZipFile(zipFile);
-        return latex.build(uuid, document);
+        return latex.build(uuid.toString(), document);
     }
 
     public LaTeXBuild buildDocument(UUID uuid, String document) throws IOException, InterruptedException {
-        return latex.build(uuid, document);
+        return latex.build(uuid.toString(), document);
     }
 
-    public Path getPDFByUUID(UUID uuid) throws IOException {
-        return latex.getPDF(uuid);
+    public LaTeXBuild buildDocument(Document document) throws IOException, InterruptedException, GitAPIException {
+        return latex.build(document);
     }
 
-    public Path getPathForDocument(UUID uuid) throws IOException {
-        return latex.getPathForDocument(uuid);
+    public Path getPDF(String name) throws IOException {
+        return latex.getPDF(name);
+    }
+
+    public Path getPathForDocument(String name) throws IOException {
+        return latex.getPathForDocument(name);
     }
 }

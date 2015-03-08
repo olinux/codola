@@ -1,10 +1,13 @@
 package ch.olischmid.codola.latex.control;
 
-import ch.olischmid.codola.config.Configuration;
-import ch.olischmid.codola.git.control.Git;
+import ch.olischmid.codola.app.control.Configuration;
+import ch.olischmid.codola.docs.entity.Document;
+import ch.olischmid.codola.git.control.TemplateGIT;
 import ch.olischmid.codola.latex.commons.FileEndings;
 import ch.olischmid.codola.latex.entity.LaTeXBuild;
 import ch.olischmid.codola.utils.ShellUtils;
+import org.apache.commons.io.FileUtils;
+import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.inject.Inject;
 import java.io.*;
@@ -37,11 +40,11 @@ public class LaTeX {
     @Inject
     ShellUtils shell;
     @Inject
-    Git git;
+    TemplateGIT templateGIT;
 
 
     public void install() throws IOException, InterruptedException {
-        Path installScript =  shell.copyShellScriptFromClassPathToBasePath(INSTALL_SCRIPT);
+        Path installScript = shell.copyShellScriptFromClassPathToBasePath(INSTALL_SCRIPT);
         shell.copyShellScriptFromClassPathToBasePath(INSTALL_CTAN_SCRIPT);
         shell.copyShellScriptFromClassPathToBasePath(TEXLIVE_PROFILE);
         shell.executeShellScript(installScript, LATEX_SUBFOLDER);
@@ -50,7 +53,7 @@ public class LaTeX {
     }
 
     public boolean isInstalled() throws IOException {
-       return Files.exists(getLatexBuildFolder());
+        return Files.exists(getLatexBuildFolder());
     }
 
     private Path getInstallCTanScriptPath() throws IOException {
@@ -58,32 +61,43 @@ public class LaTeX {
     }
 
     public void updateCTANPackages() throws IOException, InterruptedException {
-        if(isInstalled()){
-            Path packageList = git.getAbsoluteTemplateDirectory().resolve(ADDITIONAL_CTAN_PACKAGES);
-            if(Files.exists(packageList)) {
+        if (isInstalled()) {
+            Path packageList = templateGIT.getPath().resolve(ADDITIONAL_CTAN_PACKAGES);
+            if (Files.exists(packageList)) {
                 shell.executeShellScript(getInstallCTanScriptPath(), LATEX_SUBFOLDER, packageList.toString());
             }
         }
     }
 
     public List<String> getAdditionalCTANPackages() throws IOException {
-        Path packageList = git.getAbsoluteTemplateDirectory().resolve(ADDITIONAL_CTAN_PACKAGES);
-        if(Files.exists(packageList)) {
+        Path packageList = templateGIT.getPath().resolve(ADDITIONAL_CTAN_PACKAGES);
+        if (Files.exists(packageList)) {
             return Files.readAllLines(packageList, StandardCharsets.UTF_8);
         }
         return Collections.emptyList();
     }
 
-    public LaTeXBuild build(UUID uuid, String document) throws IOException, InterruptedException {
-        Path buildPath = getLatexBuildFolder().resolve(uuid.toString());
-        if(Files.exists(buildPath)) {
-            Path templateRepoDirectory = buildPath.resolve(Git.TEMPLATE_REPO_DIRECTORY);
-            if(!Files.exists(templateRepoDirectory)) {
-                Files.createSymbolicLink(templateRepoDirectory, git.getAbsoluteTemplateDirectory());
+    public LaTeXBuild build(String name, String document) throws IOException, InterruptedException {
+        Path buildPath = getLatexBuildFolder().resolve(name);
+        if (Files.exists(buildPath)) {
+            Path templateRepoDirectory = buildPath.resolve(templateGIT.TEMPLATE_SUBFOLDER);
+            if (!Files.exists(templateRepoDirectory)) {
+                Files.createSymbolicLink(templateRepoDirectory, templateGIT.getPath());
             }
             shell.executeShellScript(getLatexShellScript(), LATEX_SUBFOLDER, buildPath.toString(), FileEndings.LATEX.appendFileEnding(document));
         }
-        return getLaTeXBuild(uuid, document);
+        return getLaTeXBuild(name, document);
+    }
+
+    public LaTeXBuild build(Document document) throws IOException, InterruptedException, GitAPIException {
+        Path buildPath = getPathForDocument(document.getName());
+        Files.deleteIfExists(buildPath.resolve(templateGIT.TEMPLATE_SUBFOLDER));
+        if (Files.exists(buildPath)) {
+            FileUtils.deleteDirectory(buildPath.toFile());
+        }
+        Files.createDirectories(buildPath);
+        document.copyToPath(buildPath);
+        return build(document.getName(), document.getMainFile());
     }
 
 
@@ -96,8 +110,8 @@ public class LaTeX {
         return configuration.getConfigurationRoot().resolve(LATEX_SCRIPT);
     }
 
-    public LaTeXBuild getLaTeXBuild(UUID id, String document) throws IOException {
-        Path path = getLatexBuildFolder().resolve(id.toString());
+    public LaTeXBuild getLaTeXBuild(String id, String document) throws IOException {
+        Path path = getLatexBuildFolder().resolve(id);
         return new LaTeXBuild(id, document, path);
     }
 
@@ -110,43 +124,43 @@ public class LaTeX {
                 return file.isDirectory();
             }
         });
-        for(File f : files){
+        for (File f : files) {
             //TODO How to find the correct document?
-           builds.add(getLaTeXBuild(UUID.fromString(f.getName()), null));
+            builds.add(getLaTeXBuild(f.getName(), null));
         }
         return builds;
     }
 
-    public Path getPDF(UUID uuid) throws IOException {
-        File[] files = getLatexBuildFolder().resolve(uuid.toString()).toFile().listFiles(new FilenameFilter() {
+    public Path getPDF(String name) throws IOException {
+        File[] files = getLatexBuildFolder().resolve(name).toFile().listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File file, String s) {
                 return s.endsWith(FileEndings.PDF.ending);
             }
         });
-        if(files!=null && files.length>0){
+        if (files != null && files.length > 0) {
             return Paths.get(files[0].getAbsolutePath());
         }
         return null;
     }
 
-    public Path getPathForDocument(UUID uuid) throws IOException {
-        return getLatexBuildFolder().resolve(uuid.toString());
+    public Path getPathForDocument(String name) throws IOException {
+        return getLatexBuildFolder().resolve(name);
     }
 
     public UUID extractZipFile(InputStream inputStream) throws IOException {
         UUID uuid = UUID.randomUUID();
         Path targetPath = getLatexBuildFolder().resolve(uuid.toString());
         Files.createDirectories(targetPath);
-        try(ZipInputStream zip = new ZipInputStream(inputStream)){
+        try (ZipInputStream zip = new ZipInputStream(inputStream)) {
             ZipEntry entry;
-            while((entry=zip.getNextEntry())!=null){
-                if(!entry.isDirectory()){
+            while ((entry = zip.getNextEntry()) != null) {
+                if (!entry.isDirectory()) {
                     Path file = targetPath.resolve(entry.getName());
                     Files.createDirectories(file.getParent());
                     Files.createFile(file);
-                    try(FileOutputStream fout = new FileOutputStream(file.toFile())){
-                        for(int c = zip.read(); c!=-1; c=zip.read()){
+                    try (FileOutputStream fout = new FileOutputStream(file.toFile())) {
+                        for (int c = zip.read(); c != -1; c = zip.read()) {
                             fout.write(c);
                         }
                         zip.closeEntry();

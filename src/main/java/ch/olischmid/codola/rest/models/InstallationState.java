@@ -1,6 +1,5 @@
 package ch.olischmid.codola.rest.models;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -14,12 +13,23 @@ import java.util.List;
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 @Getter
-@AllArgsConstructor
 public class InstallationState {
 
-    final boolean installationStarted;
-    List<InstallationStep> steps;
+    final List<InstallationStep> steps;
+    final boolean installed;
 
-    public final static String installTemplateGITRepoCommand="installTemplateGIT";
+    public InstallationState(List<InstallationStep> steps){
+        this.steps = steps;
+        this.installed = isInstalled();
+    }
+
+    private boolean isInstalled(){
+        for(InstallationStep step : steps){
+            if(!step.isInstalled()){
+                return false;
+            }
+        }
+        return true;
+    }
 
 }
