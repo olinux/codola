@@ -1,11 +1,13 @@
 package ch.olischmid.codola.utils;
 
 import ch.olischmid.codola.app.control.Configuration;
+import org.apache.commons.io.IOUtils;
 
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -19,7 +21,7 @@ public class ShellUtils {
     Configuration configuration;
 
 
-    public void executeShellScript(Path shellScript, String... args) throws IOException, InterruptedException {
+    public String executeShellScript(Path shellScript, String... args) throws IOException, InterruptedException {
         String[] arg;
         if(args!=null){
             arg=new String[args.length+1];
@@ -33,10 +35,12 @@ public class ShellUtils {
             arg[0]=shellScript.toFile().getAbsolutePath();
         }
         ProcessBuilder processBuilder = new ProcessBuilder(arg);
-        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        Process process = processBuilder.start();
+        StringWriter outputStream = new StringWriter();
+        IOUtils.copy(process.getInputStream(), outputStream);
         processBuilder.start().waitFor();
-        //TODO Exception handling
+        System.out.print(outputStream.toString());
+        return outputStream.toString();
     }
 
 

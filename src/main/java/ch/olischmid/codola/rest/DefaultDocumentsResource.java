@@ -10,6 +10,7 @@ import ch.olischmid.codola.docs.entity.Document;
 import ch.olischmid.codola.docs.entity.GitDocument;
 import ch.olischmid.codola.git.control.DefaultGIT;
 import ch.olischmid.codola.latex.boundary.LaTeXBuilder;
+import ch.olischmid.codola.latex.entity.LaTeXBuild;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -82,15 +83,16 @@ public class DefaultDocumentsResource {
 
     @PUT
     @Path("{name}/files/{file}")
-    public Response updateDefaultFile(String content, @PathParam("name") String document, @PathParam("file") String file) throws IOException, InterruptedException, GitAPIException {
+    @Produces("text/plain")
+    public String updateDefaultFile(String content, @PathParam("name") String document, @PathParam("file") String file) throws IOException, InterruptedException, GitAPIException {
         String fileDecoded = URLDecoder.decode(file, StandardCharsets.UTF_8.name());
         Document doc = documents.getDefaultDocument(document);
         defaultGIT.updateContentOfFile(doc, file, content);
         //Copy the file to its external folder (we don't want to block the git repo for the whole build process)
         defaultGIT.externalizeDocument(doc, laTeXBuilder.getPathForDocument(doc.getName()));
         //build the document
-        laTeXBuilder.buildDocument(doc);
-        return Response.ok().build();
+        LaTeXBuild laTeXBuild = laTeXBuilder.buildDocument(doc);
+        return laTeXBuild.getBuildLog();
     }
 
 

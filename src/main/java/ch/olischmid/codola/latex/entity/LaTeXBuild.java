@@ -23,6 +23,8 @@ public class LaTeXBuild {
 
     String document;
 
+    String buildLog;
+
     @XmlTransient
     Path filePath;
 

@@ -30,6 +30,7 @@
     <script src="https://cdn.firebase.com/libs/firepad/1.1.0/firepad.min.js"></script>
 
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.11/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.11/angular-sanitize.js"></script>
 
     <!-- The jQuery UI widget factory, can be omitted if jQuery UI is already included -->
     <script src="https://code.jquery.com/ui/1.11.2/jquery-ui.min.js"></script>
@@ -110,6 +111,23 @@
             </div>
         </div>
 
+        <div class="modal fade" id="showLog" tabindex="-1" role="dialog" aria-labelledby="showLogLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="showLogLabel">Current log file</h4>
+                    </div>
+                    <div class="modal-body" ng-bind-html="log">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
         <div class="modal fade" id="deleteFileDialog" tabindex="-1" role="dialog" aria-labelledby="deleteFileLabel" aria-hidden="true">
             <div class="modal-dialog">
@@ -142,6 +160,9 @@
                 <div class="col-xs-12">
                     <div class="user pull-right">
                         <div >
+                            <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#showLog">
+                                Show log
+                            </button>
                             <button type="button" class="btn btn-default btn-default" ng-click="refresh()">
                                 <i class="glyphicon glyphicon-save-file"></i>
                                 <span>Refresh document</span></button>
@@ -170,11 +191,9 @@
                         <div id="editor" class="fullheight"></div>
                     </div>
                 </div>
-                <div class="col-xs-4 fullheight">
-                    <div class="widget fullheight">
-                        <div id="preview" ng-controller="PreviewController">
-                            <iframe id="pdfcanvas" src="{{previewData}}"></iframe>
-                        </div>
+                <div class="col-xs-4 widget fullheight">
+                    <div id="preview" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="previewLabel" ng-controller="PreviewController">
+                        <iframe id="pdfcanvas" src="{{previewData}}"></iframe>
                     </div>
                 </div>
             </div>

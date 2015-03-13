@@ -30,7 +30,6 @@ import java.util.List;
 /**
  * There is only one GIT repository - we therefore need to ensure a correct locking.
  */
-
 @Singleton
 public class DefaultGIT extends AbstractGIT {
 
@@ -40,9 +39,22 @@ public class DefaultGIT extends AbstractGIT {
     @Inject
     FileUtils fileUtils;
 
+    @Inject
+    GitManager gitManager;
+
+    private String repository;
+    /**
+     * The locking object which ensures the synchronized access to the git repo if an actual checkout is required.
+     */
+    private Object gitLock = new Object();
+
+    public Object getGitLock(){
+        return gitLock;
+    }
+
     @Override
     public Path getPath() throws IOException {
-        return configuration.getAbsoluteGitDirectory().resolve("default");
+        return configuration.getAbsoluteGitDirectory().resolve(repository);
     }
 
 
@@ -74,7 +86,7 @@ public class DefaultGIT extends AbstractGIT {
      * Initializes a new document - in fact, a new branch is created (on base of the current master branch) which is immediately pushed to the remote repo.
      */
     public void createNewDocument(String document) throws IOException, GitAPIException, URISyntaxException {
-        synchronized (gitLock) {
+        synchronized (getGitLock()) {
             Git git = getGitRepo();
             if (git != null) {
                 git.checkout().setName(MASTER_BRANCH_NAME).call();
@@ -90,7 +102,7 @@ public class DefaultGIT extends AbstractGIT {
     }
 
     public void removeDocument(Document document) throws IOException, GitAPIException {
-        synchronized (gitLock){
+        synchronized (getGitLock()){
             //Ensure to leave the branch we want to delete - for simplicity just go to MASTER
             checkoutBranch(MASTER_BRANCH_NAME);
             getGitRepo().branchDelete().setBranchNames(document.getName()).setForce(true).call();
@@ -100,7 +112,7 @@ public class DefaultGIT extends AbstractGIT {
     }
 
     public void removeFileFromDocument(Document document, String fileName) throws IOException, GitAPIException {
-        synchronized (gitLock){
+        synchronized (getGitLock()){
             checkoutBranch(document.getName());
             getGitRepo().rm().addFilepattern(fileName).call();
             commitAllChanges(document.getName(), null, null);
@@ -110,7 +122,7 @@ public class DefaultGIT extends AbstractGIT {
 
 
     public void pushDocument(Document document, String user, String message) throws GitAPIException, IOException {
-        synchronized (gitLock) {
+        synchronized (getGitLock()) {
             checkoutBranch(document.getName());
             commitAllChanges(document.getName(), user, message);
             pushToOrigin(document.getName());
@@ -119,7 +131,7 @@ public class DefaultGIT extends AbstractGIT {
 
 
     public void updateContentOfFile(Document document, String path, String content) throws GitAPIException, IOException {
-        synchronized (gitLock){
+        synchronized (getGitLock()){
             checkoutBranch(document.getName());
             document.writeContentOfFile(path, content);
             commitAllChanges(document.getName(), null, null);
@@ -127,7 +139,7 @@ public class DefaultGIT extends AbstractGIT {
     }
 
     public void createFileForDocument(Document document, String fileName) throws IOException, GitAPIException {
-        synchronized (gitLock){
+        synchronized (getGitLock()){
             checkoutBranch(document.getName());
             document.createNewFile(fileName);
             getGitRepo().add().addFilepattern(fileName).call();
@@ -136,7 +148,7 @@ public class DefaultGIT extends AbstractGIT {
     }
 
     public void addFileForDocument(Document document, String fileName, InputStream file) throws GitAPIException, IOException {
-        synchronized (gitLock){
+        synchronized (getGitLock()){
             checkoutBranch(document.getName());
             document.addFile(fileName, file);
             getGitRepo().add().addFilepattern(fileName).call();
@@ -146,7 +158,7 @@ public class DefaultGIT extends AbstractGIT {
 
 
     public void externalizeDocument(Document document, Path targetPath) throws IOException, GitAPIException {
-        synchronized (gitLock){
+        synchronized (getGitLock()){
             checkoutBranch(document.getName());
             document.copyToPath(targetPath);
         }
@@ -172,7 +184,7 @@ public class DefaultGIT extends AbstractGIT {
 
     //this could potentially be done even without checking out the branch and therefore without locking - but it's much more comfortable with asking the file system. Anyways: If this represents a bottleneck, read the file structure from the git meta data.
     public List<FileStructure> getFileStructure(Document document) throws IOException, GitAPIException {
-        synchronized (gitLock){
+        synchronized (getGitLock()){
             checkoutBranch(document.getName());
             return fileUtils.getFileStructure(document);
         }

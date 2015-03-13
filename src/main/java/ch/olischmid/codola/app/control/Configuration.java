@@ -1,13 +1,12 @@
 package ch.olischmid.codola.app.control;
 
-import java.io.*;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Properties;
 
 /**
- * Created by oli on 29.01.15.
+ * The overall application configuration - defines, where the most fundamental paths are located, etc.
  */
 
 public class Configuration {
@@ -19,9 +18,9 @@ public class Configuration {
 
     public Path configurationRoot;
 
-    private Properties property;
+//    private Properties property;
 
-    private Properties getProperty() throws IOException {
+  /*  private Properties getProperty() throws IOException {
         if(property==null){
             property = new Properties();
             if(Files.exists(getPropertyPath())) {
@@ -31,13 +30,13 @@ public class Configuration {
             }
         }
         return property;
-    }
+    }*/
 
-    private Path getPropertyPath() throws IOException {
-        return getConfigurationRoot().resolve(PROPERTYFILE);
-    }
+//    private Path getPropertyPath() throws IOException {
+//        return getConfigurationRoot().resolve(PROPERTYFILE);
+//    }
 
-    public void addToConfigurationFile(String key, String value) throws IOException {
+  /*  public void addToConfigurationFile(String key, String value) throws IOException {
         Properties property = getProperty();
         property.setProperty(key, value);
         try(Writer w = new FileWriter(getPropertyPath().toFile())) {
@@ -47,7 +46,7 @@ public class Configuration {
 
     public String getFromConfigurationFile(String key) throws IOException {
         return getProperty().getProperty(key);
-    }
+    }*/
 
     public Path getConfigurationRoot() throws IOException {
         if(configurationRoot==null){

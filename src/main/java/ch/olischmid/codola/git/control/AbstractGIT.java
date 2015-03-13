@@ -29,11 +29,6 @@ public abstract class AbstractGIT {
     private Git gitRepo;
 
 
-    /**
-     * The locking object which ensures the synchronized access to the git repo if an actual checkout is required.
-     */
-    protected Object gitLock = new Object();
-
     public void install(String remoteRepo) throws IOException, GitAPIException {
         if(!isInstalled()) {
             Path path = getPath();
@@ -46,14 +41,14 @@ public abstract class AbstractGIT {
         }
     }
 
-    public void pull() throws IOException, GitAPIException{
-        synchronized (gitLock) {
+   /* public void pull() throws IOException, GitAPIException{
+        synchronized (getGitLock()) {
             FileRepositoryBuilder builder = new FileRepositoryBuilder();
             Repository repository = builder.setGitDir(getGitPath().toFile()).readEnvironment().findGitDir().build();
             Git git = new Git(repository);
             git.pull().call();
         }
-    }
+    }*/
 
     public Git getGitRepo() throws IOException, GitAPIException {
         if(gitRepo==null) {

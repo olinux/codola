@@ -79,14 +79,15 @@ public class LaTeX {
 
     public LaTeXBuild build(String name, String document) throws IOException, InterruptedException {
         Path buildPath = getLatexBuildFolder().resolve(name);
+        String buildLog= null;
         if (Files.exists(buildPath)) {
             Path templateRepoDirectory = buildPath.resolve(templateGIT.TEMPLATE_SUBFOLDER);
             if (!Files.exists(templateRepoDirectory)) {
                 Files.createSymbolicLink(templateRepoDirectory, templateGIT.getPath());
             }
-            shell.executeShellScript(getLatexShellScript(), LATEX_SUBFOLDER, buildPath.toString(), FileEndings.LATEX.appendFileEnding(document));
+            buildLog = shell.executeShellScript(getLatexShellScript(), LATEX_SUBFOLDER, buildPath.toString(), FileEndings.LATEX.appendFileEnding(document));
         }
-        return getLaTeXBuild(name, document);
+        return getLaTeXBuild(name, document, buildLog);
     }
 
     public LaTeXBuild build(Document document) throws IOException, InterruptedException, GitAPIException {
@@ -110,9 +111,9 @@ public class LaTeX {
         return configuration.getConfigurationRoot().resolve(LATEX_SCRIPT);
     }
 
-    public LaTeXBuild getLaTeXBuild(String id, String document) throws IOException {
+    public LaTeXBuild getLaTeXBuild(String id, String document, String buildLog) throws IOException {
         Path path = getLatexBuildFolder().resolve(id);
-        return new LaTeXBuild(id, document, path);
+        return new LaTeXBuild(id, document, buildLog, path);
     }
 
 
@@ -126,7 +127,7 @@ public class LaTeX {
         });
         for (File f : files) {
             //TODO How to find the correct document?
-            builds.add(getLaTeXBuild(f.getName(), null));
+            builds.add(getLaTeXBuild(f.getName(), null, null));
         }
         return builds;
     }

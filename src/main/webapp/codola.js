@@ -12,8 +12,8 @@ function getIdFromParam() {
     }
 }
 
-angular.module('codola_editor', ['blueimp.fileupload'])
-    .controller('FirepadController', ['$scope', '$rootScope', '$http', function ($scope, $rootScope, $http) {
+angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
+    .controller('FirepadController', ['$scope', '$rootScope', '$http', '$sce', function ($scope, $rootScope, $http, $sce) {
         $rootScope.$on('filesChanged', function (event) {
             $scope.loadFileList();
         });
@@ -110,8 +110,12 @@ angular.module('codola_editor', ['blueimp.fileupload'])
         };
 
         $scope.saveFile = function () {
+
             $http.put('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent($scope.currentFile), $scope.firepad.getText())
                 .success(function (data, status, headers, config) {
+                    if(data!==''){
+                        $scope.log =  data.replace(/\n/g, "<br/>");
+                    }
                     // this callback will be called asynchronously
                     // when the response is available
                     $rootScope.$emit('documentChanged');
@@ -119,6 +123,7 @@ angular.module('codola_editor', ['blueimp.fileupload'])
                 error(function (data, status, headers, config) {
                     // called asynchronously if an error occurs
                     // or server returns response with an error status.
+                    alert("Was not able to save the file");
                 });
         };
 
@@ -194,8 +199,10 @@ angular.module('codola_editor', ['blueimp.fileupload'])
             $scope.push = function(){
                 $http.put('rest/documents/' + getIdFromParam(), $scope.message)
                     .success(function (data, status, headers, config) {
+
                     }).
                     error(function (data, status, headers, config) {
+                        alert("Push failed: "+status);
                     });
             }
             $scope.options = {
