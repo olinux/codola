@@ -17,11 +17,13 @@ angular.module('codola_overview', [])
         }
     }])
     .controller('MainMenuController', ['$scope', '$rootScope', '$http', function ($scope, $rootScope, $http) {
-        $http.get('rest/documents/').success(function (data, status, headers, config) {
-            $scope.documents = data;
-        }).error(function (data, status, headers, config) {
-            alert('Was not able to fetch already existing documents');
-        });
+        $scope.loadUploadedDocuments = function() {
+            $http.get('rest/documents/uploads').success(function (data, status, headers, config) {
+                $scope.uploadedDocuments = data;
+            }).error(function (data, status, headers, config) {
+                alert('Was not able to fetch uploaded documents');
+            });
+        };
         $scope.loadDefaultDocuments = function() {
             $http.get('rest/documents/default').success(function (data, status, headers, config) {
                 $scope.defaultDocuments = data;
@@ -29,17 +31,41 @@ angular.module('codola_overview', [])
                 alert('Was not able to fetch already existing default documents');
             });
         };
+        $scope.loadDedicatedDocuments = function() {
+            $http.get('rest/documents/dedicated').success(function (data, status, headers, config) {
+                $scope.dedicatedDocuments = data;
+            }).error(function (data, status, headers, config) {
+                alert('Was not able to fetch dedicated documents');
+            });
+        };
+        $scope.loadUploadedDocuments();
+        $scope.loadDedicatedDocuments();
         $scope.loadDefaultDocuments();
-        $scope.markFileForRemoval = function (document) {
-            $scope.markedFileForRemoval = document;
-        }
-        $scope.remove = function () {
+
+        $scope.doRemove = function () {
             $http.delete('rest/documents/default/' + $scope.markedFileForRemoval.displayName).success(function (data, status, headers, config) {
                 $scope.loadDefaultDocuments();
                 $('#removeGitDoc').modal('hide')
             }).error(function (data, status, headers, config) {
                 alert("Was not able to remove document");
             });
+        }
+        $scope.doDetach = function () {
+            $http.delete('rest/documents/'+$scope.markedFileForRemoval.gitRepository+'/' + $scope.markedFileForRemoval.displayName).success(function (data, status, headers, config) {
+                $scope.loadDedicatedDocuments();
+                $('#detachGitDoc').modal('hide')
+            }).error(function (data, status, headers, config) {
+                alert("Was not able to detach document");
+            });
+        }
+
+        $scope.remove = function (document) {
+            $scope.markedFileForRemoval = document;
+            $("#removeGitDoc").modal("show");
+        }
+        $scope.detach = function (document) {
+            $scope.markedFileForRemoval = document;
+            $("#detachGitDoc").modal("show");
         }
 
 
@@ -61,7 +87,11 @@ angular.module('codola_overview', [])
 
             }
             else {
-                alert("Not yet implemented");
+                $http.post('rest/documents/' + $scope.docname, $scope.giturl).success(function (data, status, headers, config) {
+                    window.location.href = "editor.html?"+$scope.docname+"/" + $scope.docname;
+                }).error(function (data, status, headers, config) {
+                    alert("Was not able to add document");
+                });
             }
         }
     }]);

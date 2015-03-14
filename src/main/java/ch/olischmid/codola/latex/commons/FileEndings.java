@@ -14,11 +14,18 @@ public enum FileEndings {
     }
 
     public String appendFileEnding(String fileWithoutEnding){
-        if(fileWithoutEnding.endsWith(ending)){
+        if(fileWithoutEnding.endsWith(ending)) {
             return fileWithoutEnding;
         }
         else {
-            return fileWithoutEnding + ending;
+            String newfileWithoutEnding = null;
+            for (FileEndings fileEndings : FileEndings.values()) {
+                if(fileWithoutEnding.endsWith(fileEndings.ending)){
+                    newfileWithoutEnding = fileWithoutEnding.substring(0, fileWithoutEnding.length()-fileEndings.ending.length());
+                    break;
+                }
+            }
+            return (newfileWithoutEnding!=null ? newfileWithoutEnding : fileWithoutEnding) + ending;
         }
     }
 }

@@ -2,7 +2,7 @@ package ch.olischmid.codola.latex.control;
 
 import ch.olischmid.codola.app.control.Configuration;
 import ch.olischmid.codola.docs.entity.Document;
-import ch.olischmid.codola.git.control.TemplateGIT;
+import ch.olischmid.codola.git.control.GIT;
 import ch.olischmid.codola.latex.commons.FileEndings;
 import ch.olischmid.codola.latex.entity.LaTeXBuild;
 import ch.olischmid.codola.utils.ShellUtils;
@@ -10,7 +10,10 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.inject.Inject;
-import java.io.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,9 +21,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 /**
  * Created by oli on 29.01.15.
@@ -40,7 +40,7 @@ public class LaTeX {
     @Inject
     ShellUtils shell;
     @Inject
-    TemplateGIT templateGIT;
+    GIT templateGIT;
 
 
     public void install() throws IOException, InterruptedException {
@@ -62,7 +62,7 @@ public class LaTeX {
 
     public void updateCTANPackages() throws IOException, InterruptedException {
         if (isInstalled()) {
-            Path packageList = templateGIT.getPath().resolve(ADDITIONAL_CTAN_PACKAGES);
+            Path packageList = templateGIT.getPath(GIT.TEMPLATE_REPOSITORY).resolve(ADDITIONAL_CTAN_PACKAGES);
             if (Files.exists(packageList)) {
                 shell.executeShellScript(getInstallCTanScriptPath(), LATEX_SUBFOLDER, packageList.toString());
             }
@@ -70,7 +70,7 @@ public class LaTeX {
     }
 
     public List<String> getAdditionalCTANPackages() throws IOException {
-        Path packageList = templateGIT.getPath().resolve(ADDITIONAL_CTAN_PACKAGES);
+        Path packageList = templateGIT.getPath(GIT.TEMPLATE_REPOSITORY).resolve(ADDITIONAL_CTAN_PACKAGES);
         if (Files.exists(packageList)) {
             return Files.readAllLines(packageList, StandardCharsets.UTF_8);
         }
@@ -81,9 +81,9 @@ public class LaTeX {
         Path buildPath = getLatexBuildFolder().resolve(name);
         String buildLog= null;
         if (Files.exists(buildPath)) {
-            Path templateRepoDirectory = buildPath.resolve(templateGIT.TEMPLATE_SUBFOLDER);
+            Path templateRepoDirectory = buildPath.resolve(templateGIT.TEMPLATE_REPOSITORY);
             if (!Files.exists(templateRepoDirectory)) {
-                Files.createSymbolicLink(templateRepoDirectory, templateGIT.getPath());
+                Files.createSymbolicLink(templateRepoDirectory, templateGIT.getPath(GIT.TEMPLATE_REPOSITORY));
             }
             buildLog = shell.executeShellScript(getLatexShellScript(), LATEX_SUBFOLDER, buildPath.toString(), FileEndings.LATEX.appendFileEnding(document));
         }
@@ -92,7 +92,7 @@ public class LaTeX {
 
     public LaTeXBuild build(Document document) throws IOException, InterruptedException, GitAPIException {
         Path buildPath = getPathForDocument(document.getName());
-        Files.deleteIfExists(buildPath.resolve(templateGIT.TEMPLATE_SUBFOLDER));
+        Files.deleteIfExists(buildPath.resolve(templateGIT.TEMPLATE_REPOSITORY));
         if (Files.exists(buildPath)) {
             FileUtils.deleteDirectory(buildPath.toFile());
         }
@@ -147,31 +147,6 @@ public class LaTeX {
 
     public Path getPathForDocument(String name) throws IOException {
         return getLatexBuildFolder().resolve(name);
-    }
-
-    public UUID extractZipFile(InputStream inputStream) throws IOException {
-        UUID uuid = UUID.randomUUID();
-        Path targetPath = getLatexBuildFolder().resolve(uuid.toString());
-        Files.createDirectories(targetPath);
-        try (ZipInputStream zip = new ZipInputStream(inputStream)) {
-            ZipEntry entry;
-            while ((entry = zip.getNextEntry()) != null) {
-                if (!entry.isDirectory()) {
-                    Path file = targetPath.resolve(entry.getName());
-                    Files.createDirectories(file.getParent());
-                    Files.createFile(file);
-                    try (FileOutputStream fout = new FileOutputStream(file.toFile())) {
-                        for (int c = zip.read(); c != -1; c = zip.read()) {
-                            fout.write(c);
-                        }
-                        zip.closeEntry();
-                        fout.close();
-                    }
-                }
-            }
-            zip.close();
-        }
-        return uuid;
     }
 
 }

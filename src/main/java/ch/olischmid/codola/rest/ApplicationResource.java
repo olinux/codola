@@ -1,8 +1,10 @@
 package ch.olischmid.codola.rest;
 
 import ch.olischmid.codola.config.SSHKey;
-import ch.olischmid.codola.git.control.DefaultGIT;
-import ch.olischmid.codola.git.control.TemplateGIT;
+import ch.olischmid.codola.docs.entity.DefaultDocument;
+import ch.olischmid.codola.git.control.DefaultDocumentManager;
+import ch.olischmid.codola.git.control.DedicatedDocumentManager;
+import ch.olischmid.codola.git.control.GIT;
 import ch.olischmid.codola.latex.control.LaTeX;
 import ch.olischmid.codola.rest.models.InstallationState;
 import ch.olischmid.codola.rest.models.InstallationStep;
@@ -34,17 +36,19 @@ public class ApplicationResource {
     @Inject
     SSHKey sshKey;
     @Inject
-    DefaultGIT defaultGIT;
+    DefaultDocumentManager defaultGIT;
     @Inject
-    TemplateGIT templateGIT;
+    DedicatedDocumentManager documentGITGIT;
+    @Inject
+    GIT git;
 
     @Inject
     LaTeX latex;
 
     @PUT
     public void updateApplication() throws IOException, InterruptedException, GitAPIException {
-        templateGIT.getGitRepo();
-        defaultGIT.getGitRepo();
+        git.getGitRepo(GIT.TEMPLATE_REPOSITORY);
+        git.getGitRepo(DefaultDocument.REPOSITORY);
         latex.updateCTANPackages();
     }
 
@@ -58,8 +62,8 @@ public class ApplicationResource {
     @Path("installed")
     public InstallationState getInstallationState() throws IOException {
         InstallationStep ssh = new InstallationStep(SSH_KEY, "SSH Key", sshKey.isInstalled());
-        InstallationStep cloneGitTemplate = new InstallationStep(CLONETEMPLATEGIT, "Clone Template-GIT", templateGIT.isInstalled());
-        InstallationStep cloneGitDefault = new InstallationStep(CLONEDEFAULTGIT, "Clone Default-GIT", defaultGIT.isInstalled());
+        InstallationStep cloneGitTemplate = new InstallationStep(CLONETEMPLATEGIT, "Clone Template-GIT", git.isInstalled(GIT.TEMPLATE_REPOSITORY));
+        InstallationStep cloneGitDefault = new InstallationStep(CLONEDEFAULTGIT, "Clone Default-GIT", git.isInstalled(DefaultDocument.REPOSITORY));
         InstallationStep l = new InstallationStep(LATEX, "Latex", latex.isInstalled());
         return new InstallationState(Arrays.asList(ssh, cloneGitTemplate, cloneGitDefault, l));
     }
@@ -68,7 +72,7 @@ public class ApplicationResource {
     @Path(CLONETEMPLATEGIT)
     public InstallationState cloneTemplateGIT() throws IOException, InterruptedException, GitAPIException {
         //TODO make configurable
-        templateGIT.install("https://github.com/olinux/codola_resources.git");
+        git.install("https://github.com/olinux/codola_resources.git", DefaultDocument.REPOSITORY);
         return getInstallationState();
     }
 
@@ -76,7 +80,7 @@ public class ApplicationResource {
     @Path(CLONEDEFAULTGIT)
     public InstallationState cloneDefaultGIT() throws IOException, InterruptedException, GitAPIException {
         //TODO make configurable
-        defaultGIT.install("file:///home/oli/projects/codola/tmp/defaultrepo.git");
+        git.install("file:///home/oli/projects/codola/tmp/defaultrepo.git", GIT.TEMPLATE_REPOSITORY);
         return getInstallationState();
     }
 

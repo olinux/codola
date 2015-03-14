@@ -15,17 +15,22 @@ import java.nio.file.StandardCopyOption;
  * Created by oli on 27.02.15.
  */
 @Getter
-public class Document {
+public abstract class Document {
 
-    public Document(String name, Path directory) throws IOException, GitAPIException {
+    public Document(String name, Path directory, String repository, String branch, Path buildDirectory) throws IOException, GitAPIException {
         this.name = name;
         this.directory = directory;
+        this.repository = repository;
+        this.branch = branch;
+        this.buildDirectory = buildDirectory;
     }
 
     String mainFile = "main.tex";
     final String name;
     final Path directory;
-
+    final String repository;
+    final String branch;
+    final Path buildDirectory;
 
     public Path getPathToMainFile(){
         return getDirectory().resolve(mainFile);
@@ -46,9 +51,11 @@ public class Document {
         Files.copy(file, getDirectory().resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
     }
 
-    public void copyToPath(Path targetPath) throws IOException {
-        FileUtils.copyDirectory(getDirectory().toFile(), targetPath.toFile());
+    public void copyToBuildDirectory() throws IOException {
+        FileUtils.copyDirectory(getDirectory().toFile(), getBuildDirectory().toFile());
     }
 
-
+    public void remove() throws IOException {
+        FileUtils.deleteDirectory(getBuildDirectory().toFile());
+    }
 }

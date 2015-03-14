@@ -52,13 +52,25 @@
                         </div>
                         <div class="panel-body">
                             <table class="table table-striped">
+                                <thead><tr><th>Default</th></tr></thead>
                                 <tbody>
                                     <tr ng-repeat="doc in defaultDocuments">
                                         <td><a href="editor.html?default/{{doc.displayName}}">{{doc.displayName}}</a></td>
-                                        <td><button type="button" class="btn btn-default btn-sm pull-right  btn-danger" data-toggle="modal" data-target="#removeGitDoc">
-                                            <span class="glyphicon glyphicon-trash" aria-hidden="true" ng-click="markFileForRemoval(doc)">Remove</span>
+                                        <td><button type="button" class="btn btn-default btn-sm pull-right  btn-danger">
+                                            <span class="glyphicon glyphicon-trash" aria-hidden="true" ng-click="remove(doc)">Remove</span>
                                         </button></td>
                                     </tr>
+                                </tbody>
+                            </table>
+                            <table class="table table-striped">
+                                <thead><tr><th>Dedicated</th></tr></thead>
+                                <tbody>
+                                <tr ng-repeat="doc in dedicatedDocuments">
+                                    <td><a href="editor.html?{{doc.gitRepository}}/{{doc.displayName}}">{{doc.displayName}}</a></td>
+                                    <td><button type="button" class="btn btn-default btn-sm pull-right  btn-warning">
+                                        <span class="glyphicon glyphicon-trash" aria-hidden="true" ng-click="detach(doc)">Detach</span>
+                                    </button></td>
+                                </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -68,6 +80,27 @@
                 </div>
 
             </div>
+
+            <div class="modal fade" id="detachGitDoc" tabindex="-1" role="dialog" aria-labelledby="detachGitDocLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                    aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title" id="detachGitDocLabel">Detach Git-managed document</h4>
+                        </div>
+                        <div class="modal-body">
+                            Are you really sure, that you want to detach the document <b>{{markedFileForRemoval.displayName}}</b>? Please note, that documents from dedicated sources are not deleted but only detached. They can be re-attached at any time as long as the original resource hasn't been deleted.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                             <button type="button" class="btn btn-primary btn-warning" ng-click="doDetach()"><span class="glyphicon glyphicon-trash" aria-hidden="true" />Detach</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
             <div class="modal fade" id="removeGitDoc" tabindex="-1" role="dialog" aria-labelledby="removeGitDocLabel"
                  aria-hidden="true">
@@ -83,7 +116,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                            <button type="button" class="btn btn-primary btn-danger" ng-click="remove()"><span class="glyphicon glyphicon-trash" aria-hidden="true" >Remove</button>
+                            <button type="button" class="btn btn-primary btn-danger" ng-click="doRemove()"><span class="glyphicon glyphicon-trash" aria-hidden="true" />Remove</button>
                         </div>
                     </div>
                 </div>
@@ -98,14 +131,14 @@
                         </div>
                         <div class="panel-body">
                             <div class="alert alert-warning" role="alert">
-                                Uploaded documents are temporary resources only. You can edit and rebuild them - but
+                                Uploaded documents are temporary resources only (created by a upload over the REST interface).<br/> You can edit and rebuild them - but
                                 this is meant for small adaptations/corrections only.<br/>In general, it is recommended
                                 to use Git-managed document instead!
                             </div>
                             <table class="table table-striped">
                             <tbody>
-                            <tr ng-repeat="doc in documents">
-                                <td><a href="editor.html?{{doc.uuid}}">{{doc.uuid}}</a></td>
+                            <tr ng-repeat="doc in uploadedDocuments">
+                                <td><a href="editor.html?uploads/{{doc.displayName}}">{{doc.displayName}}</a></td>
                             </tr>
                             </tbody>
                         </div>

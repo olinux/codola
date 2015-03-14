@@ -22,5 +22,5 @@ public class GitDocument {
      * The url of the dedicated GIT-repository or null if default
      */
     final String gitRepository;
-
+    final boolean dedicated;
 }

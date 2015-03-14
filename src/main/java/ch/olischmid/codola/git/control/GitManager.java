@@ -18,16 +18,13 @@ public class GitManager {
         if(key==null){
             throw new NullPointerException();
         }
-        Object locker = LOCKERREPOSITORY.get(key);
-        if(locker==null){
-            locker = new Object();
-            LOCKERREPOSITORY.put(key, locker);
+        Object object = LOCKERREPOSITORY.get(key);
+        if(object==null){
+            //TODO validate if the repository exists
+            object = new Object();
+            LOCKERREPOSITORY.put(key, object);
         }
-        return locker;
+        return object;
     }
-
-
-
-
 
 }

@@ -10,7 +10,6 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
@@ -33,17 +32,16 @@ public class LaTeXBuilder {
         return latex.getAdditionalCTANPackages();
     }
 
-    public LaTeXBuild buildFromZip(InputStream zipFile, String document) throws IOException, InterruptedException {
-        UUID uuid = latex.extractZipFile(zipFile);
-        return latex.build(uuid.toString(), document);
-    }
-
     public LaTeXBuild buildDocument(UUID uuid, String document) throws IOException, InterruptedException {
         return latex.build(uuid.toString(), document);
     }
 
     public LaTeXBuild buildDocument(Document document) throws IOException, InterruptedException, GitAPIException {
         return latex.build(document);
+    }
+
+    public void removeBuild(Document document){
+
     }
 
     public Path getPDF(String name) throws IOException {
