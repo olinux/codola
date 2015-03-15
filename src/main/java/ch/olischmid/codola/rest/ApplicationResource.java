@@ -19,9 +19,6 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Arrays;
 
-/**
- * Created by oli on 18.01.15.
- */
 @Path("app")
 @Produces(MediaType.APPLICATION_JSON)
 public class ApplicationResource {
@@ -50,7 +47,7 @@ public class ApplicationResource {
     @GET
     @Path("publicKey")
     public Response getPublicKey() throws IOException {
-        return Response.ok((Object) sshKey.getPublicSSHKeyPath().toFile()).type("text/plain").build();
+        return Response.ok(sshKey.getPublicSSHKeyPath().toFile()).type("text/plain").build();
     }
 
     @GET

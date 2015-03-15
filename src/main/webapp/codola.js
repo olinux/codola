@@ -18,16 +18,23 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
             $scope.loadFileList();
         });
 
+
         $http.get('rest/app/firebaseUrl').success(function (data, status, headers, config) {
             $scope.firebaseURL = data;
-            $scope.filterFiles = true;
+            $scope.filterFiles = false;
             $scope.searchText = '';
             $scope.loadFileList();
         }).error(function (data, status, headers, config) {
             alert('Was not able to get firebase url');
         });
 
-        $scope.loadFileList = function(){
+        $http.get('rest/templates/files').success(function (data, status, headers, config) {
+            $scope.templateFiles = data;
+        }).error(function (data, status, headers, config) {
+            alert('Was not able to load templateFiles');
+        });
+
+        $scope.loadFileList = function () {
             $http.get('rest/documents/' + getIdFromParam() + '/files').success(function (data, status, headers, config) {
                 $scope.files = data;
                 if ($scope.files.length > 0) {
@@ -41,6 +48,7 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
                 alert('Something went wrong');
             });
         };
+
 
         $scope.getMainFile = function () {
             for (var i in $scope.files) {
@@ -62,7 +70,7 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
             }
         };
 
-        $scope.fileEndingFilter = [".tex", ".md", ".jpg", ".png", ".gif"];
+        $scope.fileEndingFilter = [".tex", ".md", ".jpg", ".png", ".gif", ".txt", ".sty"];
 
 
         $scope.showFile = function (file) {
@@ -84,6 +92,21 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
             return $scope.currentFile !== '';
         };
 
+        $scope.loadTemplateFile = function (file) {
+            $('#editor').empty();
+            $scope.currentFile = file;
+            if (typeof $scope.firepadRef != 'undefined') {
+                $scope.firepadRef.unauth();
+            }
+            $scope.firepadRef = undefined;
+            $http.get('rest/templates/files/' + encodeURIComponent(file)).success(function (data, status, headers, config) {
+                $('#editor').append("<div id=\"readOnlyEditor\"></div>");
+                $('#readOnlyEditor').html($sce.getTrustedHtml(data.replace(/\n/g, "<br/>")));
+            }).error(function (data, status, headers, config) {
+                alert('Can not load file');
+            });
+        };
+
         $scope.loadFile = function (file) {
             $('#editor').empty();
             $scope.currentFile = file;
@@ -91,7 +114,7 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
                 $scope.firepadRef.unauth();
             }
             $scope.firepadRef = undefined;
-            if(file.endsWith(".jpg") || file.endsWith(".png") || file.endsWith(".gif")){
+            if (file.endsWith(".jpg") || file.endsWith(".png") || file.endsWith(".gif")) {
                 $('#editor').append("<img src=\"rest/documents/" + getIdFromParam() + "/files/" + encodeURIComponent(file) + "\" class=\"imagePreview\"></img>");
             }
             else {
@@ -113,8 +136,8 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
 
             $http.put('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent($scope.currentFile), $scope.firepad.getText())
                 .success(function (data, status, headers, config) {
-                    if(data!==''){
-                        $scope.log =  data.replace(/\n/g, "<br/>");
+                    if (data !== '') {
+                        $scope.log = data.replace(/\n/g, "<br/>");
                         $rootScope.$emit('logAvailable');
                     }
                     // this callback will be called asynchronously
@@ -128,7 +151,7 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
                 });
         };
 
-        $scope.removeFile = function(){
+        $scope.removeFile = function () {
             $http.delete('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent($scope.currentFile))
                 .success(function (data, status, headers, config) {
                     // this callback will be called asynchronously
@@ -151,7 +174,7 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
     }])
     .controller('PreviewController', ['$scope', '$rootScope', function ($scope, $rootScope) {
         $scope.previewData = '';
-        $scope.scroll=0;
+        $scope.scroll = 0;
         $rootScope.$on('documentChanged', function (event) {
             document.getElementById('pdfcanvas').contentWindow.location.reload(true);
             $scope.preview();
@@ -163,23 +186,23 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
         '$scope', '$rootScope', '$http',
         function ($scope, $rootScope, $http) {
             $scope.options = {
-                url: 'rest/documents/'+getIdFromParam()+'/files'
+                url: 'rest/documents/' + getIdFromParam() + '/files'
             };
             $scope.loadingFiles = false;
             $scope.queue = [];
-            $scope.$on('fileuploadstop', function(event, files){
+            $scope.$on('fileuploadstop', function (event, files) {
                 $rootScope.$emit('filesChanged');
             });
         }
     ]).controller('CreateController', [
         '$scope', '$rootScope', '$http',
-         function ($scope, $rootScope, $http) {
-            $scope.createFile = function() {
+        function ($scope, $rootScope, $http) {
+            $scope.createFile = function () {
                 var fileName;
-                if(typeof($scope.path)!='undefined'){
-                    fileName = $scope.path+'/'+$scope.filename;
+                if (typeof($scope.path) != 'undefined') {
+                    fileName = $scope.path + '/' + $scope.filename;
                 }
-                else{
+                else {
                     fileName = $scope.filename;
                 }
                 $http.post('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent(fileName))
@@ -197,33 +220,33 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
     ]).controller('PushController', [
         '$scope', '$rootScope', '$http',
         function ($scope, $rootScope, $http) {
-            $scope.push = function(){
+            $scope.push = function () {
                 $http.put('rest/documents/' + getIdFromParam(), $scope.message)
                     .success(function (data, status, headers, config) {
 
                     }).
                     error(function (data, status, headers, config) {
-                        alert("Push failed: "+status);
+                        alert("Push failed: " + status);
                     });
             }
             $scope.options = {
-                url: 'rest/documents/'+getIdFromParam()+'/files'
+                url: 'rest/documents/' + getIdFromParam() + '/files'
             };
             $scope.loadingFiles = false;
             $scope.queue = [];
-            $scope.$on('fileuploadstop', function(event, files){
+            $scope.$on('fileuploadstop', function (event, files) {
                 $rootScope.$emit('filesChanged');
             });
         }
     ]).controller('NavigationController', [
         '$scope', '$rootScope', '$http',
         function ($scope, $rootScope, $http) {
-            $scope.logAvailable=false;
-            $scope.refresh = function(){
+            $scope.logAvailable = false;
+            $scope.refresh = function () {
                 $rootScope.$emit('documentChanged');
             }
             $rootScope.$on('logAvailable', function (event) {
-                $scope.logAvailable=true;
+                $scope.logAvailable = true;
             });
         }
 

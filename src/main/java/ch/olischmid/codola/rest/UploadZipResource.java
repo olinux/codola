@@ -3,7 +3,6 @@ package ch.olischmid.codola.rest;
 import ch.olischmid.codola.docs.boundary.DocumentManager;
 import ch.olischmid.codola.docs.boundary.Documents;
 import ch.olischmid.codola.docs.entity.DocumentType;
-import ch.olischmid.codola.latex.boundary.LaTeXBuilder;
 import ch.olischmid.codola.latex.commons.FileEndings;
 import ch.olischmid.codola.latex.entity.LaTeXBuild;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -18,15 +17,9 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- * Created by oli on 08.03.15.
- */
 @Path("upload/zip")
 @Produces(MediaType.APPLICATION_JSON)
 public class UploadZipResource {
-
-    @Inject
-    LaTeXBuilder laTeXBuilder;
 
     @Inject
     Documents documents;
@@ -44,6 +37,6 @@ public class UploadZipResource {
         DocumentManager documentMgr = documents.getDocumentMgr(newDocumentFromZIP, DocumentType.UPLOADS_REPOSITORY, null);
         documentMgr.copyToBuildDirectory();
         LaTeXBuild laTeXBuild = documents.buildDocument(documentMgr);
-        return Response.ok((Object)laTeXBuild.getDocument(FileEndings.PDF).toFile()).type("application/pdf").build();
+        return Response.ok(laTeXBuild.getDocument(FileEndings.PDF).toFile()).type("application/pdf").build();
     }
 }

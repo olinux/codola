@@ -86,7 +86,7 @@ ul.sidebar{
 
 .sidebar-main{
     background-color: #2d3e63;
-    height:80px;
+    /*height:80px;*/
     padding: 5px;
     position:absolute;
     top:0px;
@@ -94,7 +94,7 @@ ul.sidebar{
     width:240px;
 }
 ul.sidebar{
-    margin-top:80px;
+    margin-top:45px;
     margin-bottom:40px;
 }
 
@@ -140,4 +140,12 @@ ul.sidebar .sidebar-title{
 
 .btn-space{
     margin-left:1em;
+}
+
+#editor{
+    overflow:auto;
+}
+
+#fullscreenPage{
+    overflow:hidden;
 }

@@ -1,9 +1,5 @@
 package ch.olischmid.codola.rest;
 
-/**
- * Created by oli on 08.03.15.
- */
-
 import ch.olischmid.codola.docs.boundary.DocumentManager;
 import ch.olischmid.codola.docs.boundary.Documents;
 import ch.olischmid.codola.docs.entity.DocumentInfo;
@@ -65,7 +61,7 @@ public class DocumentsResource {
         if(pdf==null){
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return Response.ok((Object) pdf.toFile()).type("application/pdf").build();
+        return Response.ok(pdf.toFile()).type("application/pdf").build();
     }
 
 
@@ -96,7 +92,7 @@ public class DocumentsResource {
     public String updateFile(String content, @PathParam("name") String document, @PathParam("file") String file) throws IOException, InterruptedException, GitAPIException {
         String fileDecoded = URLDecoder.decode(file, StandardCharsets.UTF_8.name());
         DocumentManager documentMgr = documents.getDocumentMgr(document, repository, branch);
-        documentMgr.updateContentOfFile(file, content);
+        documentMgr.updateContentOfFile(fileDecoded, content);
         //Copy the file to its external folder (we don't want to block the git repo for the whole build process)
         documentMgr.copyToBuildDirectory();
         //build the document
@@ -153,7 +149,6 @@ public class DocumentsResource {
     @DELETE
     @Path("{name}")
     public Response deleteDocument(@PathParam("name") String document) throws IOException, InterruptedException, GitAPIException {
-        String fileDecoded = URLDecoder.decode(document, StandardCharsets.UTF_8.name());
         DocumentManager documentMgr = documents.getDocumentMgr(document, repository, branch);
         documentMgr.removeDocument();
         return Response.ok().build();

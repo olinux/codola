@@ -1,7 +1,7 @@
 package ch.olischmid.codola.rest.models;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 import org.eclipse.jgit.lib.ObjectId;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -17,16 +17,27 @@ import java.util.List;
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 @Getter
-@AllArgsConstructor
 public class FileStructure {
 
     final String name;
     @XmlTransient
     final ObjectId objectId;
     final boolean directory;
-    final boolean symlink;
     final boolean mainFile;
     final List<FileStructure> subelements;
+    @Setter
+    boolean symlink;
+    @Setter
+    boolean readonly;
+
+    public FileStructure(String name, ObjectId objectId, boolean directory, boolean mainFile, List<FileStructure> subelements) {
+        this.name = name;
+        this.objectId = objectId;
+        this.directory = directory;
+        this.mainFile = mainFile;
+        this.subelements = subelements;
+    }
+
 
     public FileStructure getSubElement(String name){
         for(FileStructure subelement : subelements){

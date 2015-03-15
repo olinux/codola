@@ -115,6 +115,7 @@ public class GitDocumentManager implements DocumentManager {
     @Override
     public List<FileStructure> getFileStructure() throws IOException, GitAPIException {
         String branch = document.getBranch();
+        List<FileStructure> fileStructure;
         synchronized (git.getGitLock(document.getRepository())) {
             git.checkoutBranch(document.getRepository(), document.getBranch());
             return fileUtils.getFileStructure(document);

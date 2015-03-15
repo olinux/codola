@@ -1,5 +1,5 @@
 <!doctype html>
-<html ng-app="codola_editor">
+<html ng-app="codola_editor" id="fullscreenPage">
 <head>
 
     <meta charset="utf-8"/>
@@ -65,9 +65,44 @@
         <div class="sidebar-main">
 
             <input ng-model="searchText" class="form-control searchField" placeholder="File filter">
-            <label><input type="checkbox" ng-model="filterFiles"/> Hide temporary files</label>
+            <!--<label><input type="checkbox" ng-model="filterFiles"/> Hide temporary files</label>-->
         </div>
         <ul class="sidebar">
+            <li class="sidebar-title sidebar-dir">
+                <a onclick="$(this).parent().toggleClass('open');">
+                     <span class="glyphicon glyphicon-share-alt" aria-hidden="true">Templates</span>
+                </a>
+                <ul ng-repeat="template in templateFiles">
+                    <li class="{{currentFile==template.name ? 'active' : ''}}">
+                        <a ng-click="loadTemplateFile(template.name)"><span class="glyphicon glyphicon-file"
+                                                                                 aria-hidden="true"></span>{{template.name}}</a>
+                    </li>
+                </ul>
+            </li>
+            <li ng-if="file.directory || showFile(file.name)"
+                class="sidebar-title {{file.directory ? 'sidebar-dir' : ''}} {{currentFile==file.name ? 'active' : ''}}"
+                ng-repeat="template in templates">
+                <a onclick="$(this).parent().toggleClass('open');" ng-if="file.directory">
+                    <span ng-if="file.symlink" class="glyphicon glyphicon-share-alt"
+                          aria-hidden="true">{{file.name}}</span>
+                    <span ng-if="!file.symlink" class="glyphicon glyphicon-directory"
+                          aria-hidden="true">{{file.name}}</span>
+                </a>
+                <ul ng-if="file.directory" ng-repeat="subfile in file.subelements">
+                    <li ng-if="!subfile.directory && showFile(subfile.name)"
+                        class="{{currentFile==file.name+'/'+subfile.name ? 'active' : ''}}">
+                        <a ng-click="loadFile(file.name+'/'+subfile.name)"><span class="glyphicon glyphicon-file"
+                                                                                 aria-hidden="true"></span>{{subfile.name}}</a>
+                    </li>
+                </ul>
+                <a ng-if="!file.directory" ng-click="loadFile(file.name)">
+                    <span class="glyphicon {{file.mainFile ? 'glyphicon-book' : 'glyphicon-file'}}"
+                          aria-hidden="true"></span>{{file.name}}</a>
+            </li>
+
+
+
+
             <li ng-if="file.directory || showFile(file.name)"
                 class="sidebar-title {{file.directory ? 'sidebar-dir' : ''}} {{currentFile==file.name ? 'active' : ''}}"
                 ng-repeat="file in files">

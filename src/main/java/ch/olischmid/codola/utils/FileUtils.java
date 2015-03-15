@@ -4,7 +4,6 @@ import ch.olischmid.codola.docs.entity.Document;
 import ch.olischmid.codola.rest.models.FileStructure;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,8 +14,12 @@ import java.util.List;
 public class FileUtils {
 
     public List<FileStructure> getFileStructure(Document document){
-        FileStructure structure = buildFileStructRec(document.getDirectory().toFile(), document.getPathToMainFile());
+        FileStructure structure = getFileStructure(document.getDirectory().toFile(), document.getPathToMainFile());
         return structure.getSubelements();
+    }
+
+    public FileStructure getFileStructure(File file, java.nio.file.Path  mainFile){
+        return buildFileStructRec(file, mainFile);
     }
 
     private FileStructure buildFileStructRec(File f, java.nio.file.Path  mainFile){
@@ -29,11 +32,11 @@ public class FileUtils {
                 }
             }
             Collections.sort(fileStructures, FileStructure.SORTBYTYPEANDNAME);
-            return new FileStructure(f.getName(), null, true, Files.isSymbolicLink(f.toPath()), false, fileStructures);
+            return new FileStructure(f.getName(), null, true, false, fileStructures);
         }
         else{
             boolean isMainFile = mainFile==null ? false : f.toPath().toAbsolutePath().equals(mainFile.toAbsolutePath());
-            return new FileStructure(f.getName(), null, false, false, isMainFile, null);
+            return new FileStructure(f.getName(), null, false, isMainFile, null);
         }
     }
 }
