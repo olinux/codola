@@ -1,5 +1,6 @@
 package ch.olischmid.codola.docs.entity;
 
+import ch.olischmid.codola.git.control.GIT;
 import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -15,14 +16,40 @@ import java.nio.file.StandardCopyOption;
  * Created by oli on 27.02.15.
  */
 @Getter
-public abstract class Document {
+public class Document {
 
-    public Document(String name, Path directory, String repository, String branch, Path buildDirectory) throws IOException, GitAPIException {
+
+    public static final Document createDocument(String name, String repository, String branch, Path directory, Path buildDirectory) throws IOException, GitAPIException {
+        switch(repository){
+            case DocumentType.DEFAULT_REPOSITORY:
+                return createDefaultDocument(name, directory, repository, branch, buildDirectory);
+            case DocumentType.UPLOADS_REPOSITORY:
+                return createUploadedDocument(name, directory, buildDirectory);
+            default:
+                return createDedicatedDocument(name, directory, repository, branch, buildDirectory);
+        }
+    }
+
+
+    private static final Document createDedicatedDocument(String name, Path directory, String repository, String branch, Path buildDirectory) throws IOException, GitAPIException {
+        return new Document(name, directory, repository, branch==null ? GIT.MASTER_BRANCH_NAME : branch, buildDirectory, DocumentType.DEDICATED);
+    }
+
+    private static final Document createDefaultDocument(String name, Path directory, String repository, String branch, Path buildDirectory) throws IOException, GitAPIException {
+        return new Document(name, directory, DocumentType.DEFAULT_REPOSITORY, name, buildDirectory, DocumentType.DEFAULT);
+    }
+
+    private static final Document createUploadedDocument(String name, Path directory, Path buildDirectory) throws IOException, GitAPIException {
+        return new Document(name, directory.resolve(name), DocumentType.UPLOADS_REPOSITORY, null, buildDirectory, DocumentType.UPLOADED);
+    }
+
+    private Document(String name, Path directory, String repository, String branch, Path buildDirectory, DocumentType documentType) throws IOException, GitAPIException {
         this.name = name;
         this.directory = directory;
         this.repository = repository;
         this.branch = branch;
         this.buildDirectory = buildDirectory;
+        this.documentType = documentType;
     }
 
     String mainFile = "main.tex";
@@ -31,6 +58,7 @@ public abstract class Document {
     final String repository;
     final String branch;
     final Path buildDirectory;
+    final DocumentType documentType;
 
     public Path getPathToMainFile(){
         return getDirectory().resolve(mainFile);

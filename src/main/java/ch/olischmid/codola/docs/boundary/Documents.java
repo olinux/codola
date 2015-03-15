@@ -1,17 +1,23 @@
 package ch.olischmid.codola.docs.boundary;
 
 import ch.olischmid.codola.app.control.Configuration;
-import ch.olischmid.codola.docs.entity.*;
-import ch.olischmid.codola.git.control.DedicatedDocumentManager;
-import ch.olischmid.codola.git.control.DefaultDocumentManager;
+import ch.olischmid.codola.docs.boundary.docMgr.DedicatedDocumentManager;
+import ch.olischmid.codola.docs.boundary.docMgr.DefaultDocumentManager;
+import ch.olischmid.codola.docs.boundary.docMgr.UploadedDocumentManager;
+import ch.olischmid.codola.docs.entity.Document;
+import ch.olischmid.codola.docs.entity.DocumentType;
+import ch.olischmid.codola.docs.entity.GitDocument;
 import ch.olischmid.codola.git.control.GIT;
 import ch.olischmid.codola.latex.control.LaTeX;
+import ch.olischmid.codola.latex.entity.LaTeXBuild;
+import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.revwalk.RevCommit;
 
-import javax.enterprise.inject.New;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -20,10 +26,7 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -36,37 +39,74 @@ public class Documents {
     Configuration configuration;
 
     @Inject
-    @New
-    DefaultDocumentManager defaultGIT;
+    DefaultDocumentManager defaultDocMgr;
 
     @Inject
-    @New
-    DedicatedDocumentManager documentGIT;
+    DedicatedDocumentManager dedicatedDocMgr;
+
+    @Inject
+    UploadedDocumentManager uploadedDocMgr;
 
     @Inject
     LaTeX latex;
+
 
     @Inject
     GIT git;
 
 
-    public Document getDocument(String name, String repository, String branch) throws GitAPIException, IOException {
+    public DocumentManager getDocumentMgr(String name, String repository, String branch) throws GitAPIException, IOException {
         Path p = configuration.getAbsoluteGitDirectory().resolve(repository);
         Path buildDirectory = latex.getPathForDocument(name);
-        switch(repository){
-            case DefaultDocument.REPOSITORY:
-                return new DefaultDocument(name, p, buildDirectory);
-            case UploadedDocument.REPOSITORY:
-                return new UploadedDocument(name, p, buildDirectory);
+        Document d = Document.createDocument(name, repository, branch, p, buildDirectory);
+        DocumentManager mgr = null;
+        switch(d.getDocumentType()){
+            case DEDICATED:
+                mgr = dedicatedDocMgr;
+                break;
+            case DEFAULT:
+                mgr = defaultDocMgr;
+                break;
+            case UPLOADED:
+                mgr = uploadedDocMgr;
+                break;
             default:
-                return new DedicatedDocument(name, p, repository, branch, buildDirectory);
+                break;
+        }
+        if(mgr!=null){
+            mgr.setDocument(d);
+        }
+        return mgr;
+    }
+
+
+    public LaTeXBuild buildDocument(DocumentManager document) throws IOException, InterruptedException, GitAPIException {
+        return latex.build(document);
+    }
+
+
+    public Path getPDF(String name) throws IOException {
+        return latex.getPDF(name);
+    }
+
+    /**
+     * Initializes a new document - in fact, a new branch is created (on base of the current master branch) which is immediately pushed to the remote repo.
+     */
+    public void createNewDocument(String document) throws IOException, GitAPIException, URISyntaxException {
+        synchronized (git.getGitLock(document)) {
+            Git repo = git.getGitRepo(DocumentType.DEFAULT_REPOSITORY);
+            if (repo != null) {
+                repo.checkout().setName(GIT.MASTER_BRANCH_NAME).call();
+                repo.pull().call();
+                repo.branchCreate().setName(document).setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.SET_UPSTREAM).call();
+                StoredConfig config = repo.getRepository().getConfig();
+                config.setString(ConfigConstants.CONFIG_BRANCH_SECTION, document, "remote", GIT.ORIGIN);
+                config.setString(ConfigConstants.CONFIG_BRANCH_SECTION, document, "merge", "refs/heads/" + document);
+                config.save();
+                git.pushToOrigin(DocumentType.DEFAULT_REPOSITORY, document);
+            }
         }
     }
-
-    public synchronized void createNewDocument(String document) throws IOException, GitAPIException, URISyntaxException {
-        defaultGIT.createNewDocument(document);
-    }
-
 
     public String createNewDocumentFromZIP(InputStream inputStream) throws IOException {
         UUID uuid = UUID.randomUUID();
@@ -98,8 +138,8 @@ public class Documents {
      * @return a list of documents available on the default repository.
      * This method is not synchronized, since this information can be extracted from the git metadata and therefore doesn't have to actually switch branches.
      */
-    public List<GitDocument> getDocuments() throws GitAPIException, IOException {
-        Git defaultGitRepo = git.getGitRepo(DefaultDocument.REPOSITORY);
+    private List<GitDocument> getDefaultDocuments() throws GitAPIException, IOException {
+        Git defaultGitRepo = git.getGitRepo(DocumentType.DEFAULT_REPOSITORY);
         List<Ref> branches = defaultGitRepo.branchList().call();
         List<GitDocument> documents = new ArrayList<>();
         for (Ref branch : branches) {
@@ -118,14 +158,14 @@ public class Documents {
     }
 
 
-    public List<GitDocument> getDedicatedGitDocuments() throws IOException {
+    private List<GitDocument> getDedicatedGitDocuments() throws IOException {
         File[] files = configuration.getAbsoluteGitDirectory().toFile().listFiles();
         List<GitDocument> documents = new ArrayList<>();
         for (File file : files) {
             if (file.isDirectory()) {
                 switch (file.getName()) {
-                    case DefaultDocument.REPOSITORY:
-                    case UploadedDocument.REPOSITORY:
+                    case DocumentType.DEFAULT_REPOSITORY:
+                    case DocumentType.UPLOADS_REPOSITORY:
                     case GIT.TEMPLATE_REPOSITORY:
                         break;
                     default:
@@ -137,15 +177,27 @@ public class Documents {
         return documents;
     }
 
+    public List<GitDocument> getDocuments(DocumentType type) throws IOException, GitAPIException {
+        switch(type){
+            case DEFAULT:
+               return getDefaultDocuments();
+            case UPLOADED:
+                return getUploadedDocuments();
+            case DEDICATED:
+                return getDedicatedGitDocuments();
+        }
+        return Collections.emptyList();
+    }
 
-    public List<GitDocument> getUploadedDocuments() throws IOException {
+
+    private List<GitDocument> getUploadedDocuments() throws IOException {
         Path path =getPathForUploadedDocuments();
         List<GitDocument> documents = new ArrayList<>();
         if (Files.exists(path)) {
             File[] files = path.toFile().listFiles();
             for (File file : files) {
                 if (file.isDirectory()) {
-                    documents.add(new GitDocument(file.getName(), null, UploadedDocument.REPOSITORY, true));
+                    documents.add(new GitDocument(file.getName(), null, DocumentType.UPLOADS_REPOSITORY, true));
                 }
             }
         }
@@ -154,7 +206,7 @@ public class Documents {
 
 
     private Path getPathForUploadedDocuments() throws IOException {
-        return git.getPath(UploadedDocument.REPOSITORY);
+        return git.getPath(DocumentType.UPLOADS_REPOSITORY);
     }
 
 

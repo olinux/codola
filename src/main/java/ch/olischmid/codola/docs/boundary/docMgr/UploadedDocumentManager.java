@@ -1,8 +1,11 @@
-package ch.olischmid.codola.git.control;
+package ch.olischmid.codola.docs.boundary.docMgr;
 
+import ch.olischmid.codola.docs.boundary.DocumentManager;
 import ch.olischmid.codola.docs.entity.Document;
 import ch.olischmid.codola.rest.models.FileStructure;
 import ch.olischmid.codola.utils.FileUtils;
+import lombok.Getter;
+import lombok.Setter;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.inject.Inject;
@@ -20,49 +23,54 @@ public class UploadedDocumentManager implements DocumentManager {
     @Inject
     FileUtils fileUtils;
 
+    @Setter
+    @Getter
+    Document document;
+
+
     @Override
-    public void removeFileFromDocument(Document document, String fileName) throws IOException, GitAPIException {
+    public void removeFileFromDocument(String fileName) throws IOException, GitAPIException {
         Files.deleteIfExists(document.getDirectory().resolve(fileName));
     }
 
     @Override
-    public void pushDocument(Document document, String user, String message) throws GitAPIException, IOException {
+    public void pushDocument(String user, String message) throws GitAPIException, IOException {
         //Push is not supported - don't do anything
     }
 
     @Override
-    public void updateContentOfFile(Document document, String path, String content) throws GitAPIException, IOException {
+    public void updateContentOfFile(String path, String content) throws GitAPIException, IOException {
         document.writeContentOfFile(path, content);
     }
 
     @Override
-    public void createFileForDocument(Document document, String fileName) throws IOException, GitAPIException {
+    public void createFileForDocument(String fileName) throws IOException, GitAPIException {
         document.createNewFile(fileName);
     }
 
     @Override
-    public void addFileForDocument(Document document, String fileName, InputStream file) throws GitAPIException, IOException {
+    public void addFileForDocument(String fileName, InputStream file) throws GitAPIException, IOException {
         document.addFile(fileName, file);
     }
 
     @Override
-    public void copyToBuildDirectory(Document document) throws IOException, GitAPIException {
+    public void copyToBuildDirectory() throws IOException, GitAPIException {
         document.copyToBuildDirectory();
     }
 
     @Override
-    public InputStream getFileOfDocument(Document document, String path) throws IOException, GitAPIException {
+    public InputStream getFileOfDocument(String path) throws IOException, GitAPIException {
         return Files.newInputStream(document.getDirectory().resolve(path), StandardOpenOption.READ);
 
     }
 
     @Override
-    public List<FileStructure> getFileStructure(Document document) throws IOException, GitAPIException {
+    public List<FileStructure> getFileStructure() throws IOException, GitAPIException {
         return fileUtils.getFileStructure(document);
     }
 
     @Override
-    public void removeDocument(Document document) throws IOException, GitAPIException {
+    public void removeDocument() throws IOException, GitAPIException {
         document.remove();
     }
 }

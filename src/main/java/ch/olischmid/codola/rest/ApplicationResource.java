@@ -1,9 +1,7 @@
 package ch.olischmid.codola.rest;
 
 import ch.olischmid.codola.config.SSHKey;
-import ch.olischmid.codola.docs.entity.DefaultDocument;
-import ch.olischmid.codola.git.control.DefaultDocumentManager;
-import ch.olischmid.codola.git.control.DedicatedDocumentManager;
+import ch.olischmid.codola.docs.entity.DocumentType;
 import ch.olischmid.codola.git.control.GIT;
 import ch.olischmid.codola.latex.control.LaTeX;
 import ch.olischmid.codola.rest.models.InstallationState;
@@ -35,10 +33,7 @@ public class ApplicationResource {
 
     @Inject
     SSHKey sshKey;
-    @Inject
-    DefaultDocumentManager defaultGIT;
-    @Inject
-    DedicatedDocumentManager documentGITGIT;
+
     @Inject
     GIT git;
 
@@ -48,7 +43,7 @@ public class ApplicationResource {
     @PUT
     public void updateApplication() throws IOException, InterruptedException, GitAPIException {
         git.getGitRepo(GIT.TEMPLATE_REPOSITORY);
-        git.getGitRepo(DefaultDocument.REPOSITORY);
+        git.getGitRepo(DocumentType.DEFAULT_REPOSITORY);
         latex.updateCTANPackages();
     }
 
@@ -63,7 +58,7 @@ public class ApplicationResource {
     public InstallationState getInstallationState() throws IOException {
         InstallationStep ssh = new InstallationStep(SSH_KEY, "SSH Key", sshKey.isInstalled());
         InstallationStep cloneGitTemplate = new InstallationStep(CLONETEMPLATEGIT, "Clone Template-GIT", git.isInstalled(GIT.TEMPLATE_REPOSITORY));
-        InstallationStep cloneGitDefault = new InstallationStep(CLONEDEFAULTGIT, "Clone Default-GIT", git.isInstalled(DefaultDocument.REPOSITORY));
+        InstallationStep cloneGitDefault = new InstallationStep(CLONEDEFAULTGIT, "Clone Default-GIT", git.isInstalled(DocumentType.DEFAULT_REPOSITORY));
         InstallationStep l = new InstallationStep(LATEX, "Latex", latex.isInstalled());
         return new InstallationState(Arrays.asList(ssh, cloneGitTemplate, cloneGitDefault, l));
     }
@@ -72,7 +67,7 @@ public class ApplicationResource {
     @Path(CLONETEMPLATEGIT)
     public InstallationState cloneTemplateGIT() throws IOException, InterruptedException, GitAPIException {
         //TODO make configurable
-        git.install("https://github.com/olinux/codola_resources.git", DefaultDocument.REPOSITORY);
+        git.install("https://github.com/olinux/codola_resources.git", DocumentType.DEFAULT_REPOSITORY);
         return getInstallationState();
     }
 

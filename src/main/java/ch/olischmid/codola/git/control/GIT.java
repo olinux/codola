@@ -24,7 +24,7 @@ public class GIT {
     private static final String TEMPORARY_CODOLA_COMMIT = "CoDoLa change";
     private static final String GIT_CONFIG_DIRECTORY=".git";
     public static final String MASTER_BRANCH_NAME = "master";
-    protected final static String ORIGIN = "origin";
+    public final static String ORIGIN = "origin";
     private Git gitRepo;
 
     @Inject
@@ -33,7 +33,7 @@ public class GIT {
     @Inject
     GitManager gitManager;
 
-    Object getGitLock(String repository) {
+    public Object getGitLock(String repository) {
         return gitManager.getLockingObject(repository);
     }
 
@@ -78,12 +78,12 @@ public class GIT {
     /**
      * Checks out the given branch. Important: Make sure, that the invoking context obtains the @link{#gitLock} before invocation.
      */
-    protected void checkoutBranch(String repository, String branchName) throws IOException, GitAPIException {
+    public void checkoutBranch(String repository, String branchName) throws IOException, GitAPIException {
         getGitRepo(repository).checkout().setName(branchName).call();
     }
 
 
-    protected void commitAllChanges(String repository, String branchName, String user, String message) throws GitAPIException, IOException {
+    public void commitAllChanges(String repository, String branchName, String user, String message) throws GitAPIException, IOException {
         checkoutBranch(repository, branchName);
         RevCommit lastCommit = getLastCommit(repository, branchName);
         boolean amend = lastCommit.getFullMessage().equals(TEMPORARY_CODOLA_COMMIT);
@@ -94,13 +94,13 @@ public class GIT {
         commitCommand.call();
     }
 
-    protected RevCommit getLastCommit(String repository, String branchName) throws IOException, GitAPIException {
+    public RevCommit getLastCommit(String repository, String branchName) throws IOException, GitAPIException {
         Ref branch = getGitRepo(repository).getRepository().getRef(branchName);
         Iterable<RevCommit> commits = getGitRepo(repository).log().add(branch.getObjectId()).call();
         return commits.iterator().next();
     }
 
-    protected void pushToOrigin(String repository, String branchName) throws IOException, GitAPIException {
+    public void pushToOrigin(String repository, String branchName) throws IOException, GitAPIException {
         PullResult call = getGitRepo(repository).pull().setRebase(true).call();
         if(call.isSuccessful()){
             //We were able to rebase our changes without conflicts with the origin - there's no reason why we shouldn't push it now...
@@ -112,7 +112,7 @@ public class GIT {
         }
     }
 
-    protected void removeBranchOnOrigin(String repository, String branchName) throws IOException, GitAPIException {
+    public void removeBranchOnOrigin(String repository, String branchName) throws IOException, GitAPIException {
         RefSpec refSpec = new RefSpec().setSource(null).setDestination("refs/heads/"+branchName);
         getGitRepo(repository).push().setRemote(ORIGIN).setForce(true).setRefSpecs(refSpec).call();
     }

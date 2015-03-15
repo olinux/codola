@@ -1,8 +1,12 @@
-package ch.olischmid.codola.git.control;
+package ch.olischmid.codola.docs.boundary.docMgr;
 
+import ch.olischmid.codola.docs.boundary.DocumentManager;
 import ch.olischmid.codola.docs.entity.Document;
+import ch.olischmid.codola.git.control.GIT;
 import ch.olischmid.codola.rest.models.FileStructure;
 import ch.olischmid.codola.utils.FileUtils;
+import lombok.Getter;
+import lombok.Setter;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -15,7 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-public class DedicatedDocumentManager implements DocumentManager {
+public class GitDocumentManager implements DocumentManager {
 
     @Inject
     FileUtils fileUtils;
@@ -23,18 +27,23 @@ public class DedicatedDocumentManager implements DocumentManager {
     @Inject
     GIT git;
 
+    @Setter
+    @Getter
+    Document document;
+
+
     @Override
-    public void removeFileFromDocument(Document document, String fileName) throws IOException, GitAPIException {
+    public void removeFileFromDocument(String fileName) throws IOException, GitAPIException {
         String branch = document.getBranch();
         synchronized (git.getGitLock(document.getRepository())) {
             git.checkoutBranch(document.getRepository(), branch);
             git.getGitRepo(document.getRepository()).rm().addFilepattern(fileName).call();
-            git.commitAllChanges(document.getRepository(), document.getName(), null, null);
+            git.commitAllChanges(document.getRepository(), document.getBranch(), null, null);
         }
     }
 
     @Override
-    public void pushDocument(Document document, String user, String message) throws GitAPIException, IOException {
+    public void pushDocument(String user, String message) throws GitAPIException, IOException {
         String branch = document.getBranch();
         if (branch != null) {
             synchronized (git.getGitLock(document.getRepository())) {
@@ -47,7 +56,7 @@ public class DedicatedDocumentManager implements DocumentManager {
 
 
     @Override
-    public void updateContentOfFile(Document document, String path, String content) throws GitAPIException, IOException {
+    public void updateContentOfFile(String path, String content) throws GitAPIException, IOException {
         String branch = document.getBranch();
         synchronized (git.getGitLock(document.getRepository())) {
             git.checkoutBranch(document.getRepository(), branch);
@@ -57,7 +66,7 @@ public class DedicatedDocumentManager implements DocumentManager {
     }
 
     @Override
-    public void createFileForDocument(Document document, String fileName) throws IOException, GitAPIException {
+    public void createFileForDocument(String fileName) throws IOException, GitAPIException {
         String branch = document.getBranch();
         synchronized (git.getGitLock(document.getRepository())) {
             git.checkoutBranch(document.getRepository(), branch);
@@ -68,7 +77,7 @@ public class DedicatedDocumentManager implements DocumentManager {
     }
 
     @Override
-    public void addFileForDocument(Document document, String fileName, InputStream file) throws GitAPIException, IOException {
+    public void addFileForDocument(String fileName, InputStream file) throws GitAPIException, IOException {
         String branch = document.getBranch();
         synchronized (git.getGitLock(document.getRepository())) {
             git.checkoutBranch(document.getRepository(), branch);
@@ -80,7 +89,7 @@ public class DedicatedDocumentManager implements DocumentManager {
 
 
     @Override
-    public void copyToBuildDirectory(Document document) throws IOException, GitAPIException {
+    public void copyToBuildDirectory() throws IOException, GitAPIException {
         synchronized (git.getGitLock(document.getRepository())) {
             git.checkoutBranch(document.getRepository(), document.getBranch());
             document.copyToBuildDirectory();
@@ -89,7 +98,7 @@ public class DedicatedDocumentManager implements DocumentManager {
 
 
     @Override
-    public InputStream getFileOfDocument(Document document, String path) throws IOException, GitAPIException {
+    public InputStream getFileOfDocument(String path) throws IOException, GitAPIException {
         String branch = document.getBranch();
         RevCommit lastCommit = git.getLastCommit(document.getRepository(), branch);
         RevTree tree = lastCommit.getTree();
@@ -104,7 +113,7 @@ public class DedicatedDocumentManager implements DocumentManager {
 
     //this could potentially be done even without checking out the branch and therefore without locking - but it's much more comfortable with asking the file system. Anyways: If this represents a bottleneck, read the file structure from the git meta data.
     @Override
-    public List<FileStructure> getFileStructure(Document document) throws IOException, GitAPIException {
+    public List<FileStructure> getFileStructure() throws IOException, GitAPIException {
         String branch = document.getBranch();
         synchronized (git.getGitLock(document.getRepository())) {
             git.checkoutBranch(document.getRepository(), document.getBranch());
@@ -113,7 +122,7 @@ public class DedicatedDocumentManager implements DocumentManager {
     }
 
     @Override
-    public void removeDocument(Document document) throws IOException, GitAPIException {
+    public void removeDocument() throws IOException, GitAPIException {
         git.remove(document.getRepository());
         document.remove();
     }

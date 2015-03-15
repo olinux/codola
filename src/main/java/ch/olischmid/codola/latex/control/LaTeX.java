@@ -1,7 +1,7 @@
 package ch.olischmid.codola.latex.control;
 
 import ch.olischmid.codola.app.control.Configuration;
-import ch.olischmid.codola.docs.entity.Document;
+import ch.olischmid.codola.docs.boundary.DocumentManager;
 import ch.olischmid.codola.git.control.GIT;
 import ch.olischmid.codola.latex.commons.FileEndings;
 import ch.olischmid.codola.latex.entity.LaTeXBuild;
@@ -11,16 +11,11 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Created by oli on 29.01.15.
@@ -29,7 +24,7 @@ public class LaTeX {
 
     private static final String INSTALL_SCRIPT = "installLatex.sh";
     private static final String INSTALL_CTAN_SCRIPT = "installCTan.sh";
-    private static final String ADDITIONAL_CTAN_PACKAGES = "CTAN_packages.txt";
+    public static final String ADDITIONAL_CTAN_PACKAGES = "CTAN_packages.txt";
     private static final String TEXLIVE_PROFILE = "texlive.profile";
     private static final String LATEX_SCRIPT = "latex.sh";
     private static final String LATEX_SUBFOLDER = "latex";
@@ -40,7 +35,7 @@ public class LaTeX {
     @Inject
     ShellUtils shell;
     @Inject
-    GIT templateGIT;
+    GIT git;
 
 
     public void install() throws IOException, InterruptedException {
@@ -62,43 +57,35 @@ public class LaTeX {
 
     public void updateCTANPackages() throws IOException, InterruptedException {
         if (isInstalled()) {
-            Path packageList = templateGIT.getPath(GIT.TEMPLATE_REPOSITORY).resolve(ADDITIONAL_CTAN_PACKAGES);
+            Path packageList = git.getPath(GIT.TEMPLATE_REPOSITORY).resolve(ADDITIONAL_CTAN_PACKAGES);
             if (Files.exists(packageList)) {
                 shell.executeShellScript(getInstallCTanScriptPath(), LATEX_SUBFOLDER, packageList.toString());
             }
         }
     }
 
-    public List<String> getAdditionalCTANPackages() throws IOException {
-        Path packageList = templateGIT.getPath(GIT.TEMPLATE_REPOSITORY).resolve(ADDITIONAL_CTAN_PACKAGES);
-        if (Files.exists(packageList)) {
-            return Files.readAllLines(packageList, StandardCharsets.UTF_8);
-        }
-        return Collections.emptyList();
-    }
-
     public LaTeXBuild build(String name, String document) throws IOException, InterruptedException {
         Path buildPath = getLatexBuildFolder().resolve(name);
         String buildLog= null;
         if (Files.exists(buildPath)) {
-            Path templateRepoDirectory = buildPath.resolve(templateGIT.TEMPLATE_REPOSITORY);
+            Path templateRepoDirectory = buildPath.resolve(GIT.TEMPLATE_REPOSITORY);
             if (!Files.exists(templateRepoDirectory)) {
-                Files.createSymbolicLink(templateRepoDirectory, templateGIT.getPath(GIT.TEMPLATE_REPOSITORY));
+                Files.createSymbolicLink(templateRepoDirectory, git.getPath(GIT.TEMPLATE_REPOSITORY));
             }
             buildLog = shell.executeShellScript(getLatexShellScript(), LATEX_SUBFOLDER, buildPath.toString(), FileEndings.LATEX.appendFileEnding(document));
         }
         return getLaTeXBuild(name, document, buildLog);
     }
 
-    public LaTeXBuild build(Document document) throws IOException, InterruptedException, GitAPIException {
-        Path buildPath = getPathForDocument(document.getName());
-        Files.deleteIfExists(buildPath.resolve(templateGIT.TEMPLATE_REPOSITORY));
+    public LaTeXBuild build(DocumentManager docMgr) throws IOException, InterruptedException, GitAPIException {
+        Path buildPath = docMgr.getDocument().getBuildDirectory();
+        Files.deleteIfExists(buildPath.resolve(GIT.TEMPLATE_REPOSITORY));
         if (Files.exists(buildPath)) {
             FileUtils.deleteDirectory(buildPath.toFile());
         }
         Files.createDirectories(buildPath);
-        document.copyToPath(buildPath);
-        return build(document.getName(), document.getMainFile());
+        docMgr.copyToBuildDirectory();
+        return build(docMgr.getDocument().getName(), docMgr.getDocument().getMainFile());
     }
 
 
@@ -114,22 +101,6 @@ public class LaTeX {
     public LaTeXBuild getLaTeXBuild(String id, String document, String buildLog) throws IOException {
         Path path = getLatexBuildFolder().resolve(id);
         return new LaTeXBuild(id, document, buildLog, path);
-    }
-
-
-    public List<LaTeXBuild> getLaTeXBuilds() throws IOException {
-        List<LaTeXBuild> builds = new ArrayList<>();
-        File[] files = getLatexBuildFolder().toFile().listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File file) {
-                return file.isDirectory();
-            }
-        });
-        for (File f : files) {
-            //TODO How to find the correct document?
-            builds.add(getLaTeXBuild(f.getName(), null, null));
-        }
-        return builds;
     }
 
     public Path getPDF(String name) throws IOException {

@@ -4,16 +4,11 @@ package ch.olischmid.codola.rest;
  * Created by oli on 08.03.15.
  */
 
-import ch.olischmid.codola.app.control.Configuration;
+import ch.olischmid.codola.docs.boundary.DocumentManager;
 import ch.olischmid.codola.docs.boundary.Documents;
-import ch.olischmid.codola.docs.entity.DefaultDocument;
-import ch.olischmid.codola.docs.entity.Document;
+import ch.olischmid.codola.docs.entity.DocumentType;
 import ch.olischmid.codola.docs.entity.GitDocument;
-import ch.olischmid.codola.docs.entity.UploadedDocument;
-import ch.olischmid.codola.git.control.DefaultDocumentManager;
-import ch.olischmid.codola.git.control.DedicatedDocumentManager;
 import ch.olischmid.codola.git.control.GIT;
-import ch.olischmid.codola.latex.boundary.LaTeXBuilder;
 import ch.olischmid.codola.latex.entity.LaTeXBuild;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
@@ -38,7 +33,7 @@ import java.util.List;
 
 @Path("documents/{repository}")
 @Produces(MediaType.APPLICATION_JSON)
-public class DefaultDocumentsResource {
+public class DocumentsResource {
 
     @PathParam("repository")
     String repository;
@@ -47,19 +42,7 @@ public class DefaultDocumentsResource {
     String branch;
 
     @Inject
-    LaTeXBuilder laTeXBuilder;
-
-    @Inject
-    Configuration configuration;
-
-    @Inject
     Documents documents;
-
-    @Inject
-    DefaultDocumentManager defaultGIT;
-
-    @Inject
-    DedicatedDocumentManager documentGIT;
 
     @Inject
     GIT git;
@@ -72,28 +55,21 @@ public class DefaultDocumentsResource {
 
     @GET
     public List<GitDocument> getDefaultDocuments() throws IOException, GitAPIException {
-        switch(repository){
-            case DefaultDocument.REPOSITORY:
-                return defaultGIT.getDocuments();
-            case UploadedDocument.REPOSITORY:
-                return documents.getUploadedDocuments();
-            default:
-                return documents.getDedicatedGitDocuments();
-        }
+        return documents.getDocuments(DocumentType.getTypeByRepository(repository));
     }
 
     @GET
     @Path("{name}")
     public Response getPDF(@PathParam("name") String document) throws IOException, GitAPIException {
-        return Response.ok((Object) laTeXBuilder.getPDF(document).toFile()).type("application/pdf").build();
+        return Response.ok((Object) documents.getPDF(document).toFile()).type("application/pdf").build();
     }
 
 
     @GET
     @Path("{name}/files")
     public Response getFileList(@PathParam("name") String document) throws IOException, GitAPIException {
-        Document doc = documents.getDocument(document, repository, branch);        ;
-        return Response.ok(documentGIT.getFileStructure(doc)).build();
+        DocumentManager documentMgr = documents.getDocumentMgr(document, repository, branch);
+        return Response.ok(documentMgr.getFileStructure()).build();
     }
 
 
@@ -101,8 +77,8 @@ public class DefaultDocumentsResource {
     @Path("{name}/files/{file}")
     public Response getFile(@PathParam("name") String document, @PathParam("file") String file) throws IOException, GitAPIException {
         String fileDecoded = URLDecoder.decode(file, StandardCharsets.UTF_8.name());
-        Document doc = documents.getDocument(document, repository, branch);
-        InputStream fileIS = documentGIT.getFileOfDocument(doc, fileDecoded);
+        DocumentManager documentMgr = documents.getDocumentMgr(document, repository, branch);
+        InputStream fileIS = documentMgr.getFileOfDocument(fileDecoded);
         if(fileIS!=null){
             return Response.ok(fileIS).type("text/plain").build();
         }
@@ -115,12 +91,12 @@ public class DefaultDocumentsResource {
     @Produces("text/plain")
     public String updateFile(String content, @PathParam("name") String document, @PathParam("file") String file) throws IOException, InterruptedException, GitAPIException {
         String fileDecoded = URLDecoder.decode(file, StandardCharsets.UTF_8.name());
-        Document doc = documents.getDocument(document, repository, branch);
-        documentGIT.updateContentOfFile(doc, file, content);
+        DocumentManager documentMgr = documents.getDocumentMgr(document, repository, branch);
+        documentMgr.updateContentOfFile(file, content);
         //Copy the file to its external folder (we don't want to block the git repo for the whole build process)
-        documentGIT.copyToBuildDirectory(doc, laTeXBuilder.getPathForDocument(doc.getName()));
+        documentMgr.copyToBuildDirectory();
         //build the document
-        LaTeXBuild laTeXBuild = laTeXBuilder.buildDocument(doc);
+        LaTeXBuild laTeXBuild = documents.buildDocument(documentMgr);
         return laTeXBuild.getBuildLog();
     }
 
@@ -128,14 +104,14 @@ public class DefaultDocumentsResource {
     @POST
     @Path("{name}")
     public void createDocument(@PathParam("name") String name) throws IOException, GitAPIException, URISyntaxException {
-        defaultGIT.createNewDocument(name);
+        documents.createNewDocument(name);
     }
 
     @PUT
     @Path("{name}")
     public void pushDocument(@Context HttpServletRequest request, @PathParam("name") String document, String message) throws IOException, GitAPIException, URISyntaxException {
-        Document doc = documents.getDocument(document, repository, branch);
-        documentGIT.pushDocument(doc, request.getRemoteUser(), message);
+        DocumentManager documentMgr = documents.getDocumentMgr(document, repository, branch);
+        documentMgr.pushDocument(request.getRemoteUser(), message);
     }
 
 
@@ -143,8 +119,8 @@ public class DefaultDocumentsResource {
     @Path("{name}/files/{file}")
     public void createFile(@Context HttpServletRequest request, @PathParam("name") String document, @PathParam("file") String file) throws IOException, InterruptedException, GitAPIException {
         String fileDecoded = URLDecoder.decode(file, StandardCharsets.UTF_8.name());
-        Document doc = documents.getDocument(document, repository, branch);
-        documentGIT.createFileForDocument(doc, fileDecoded);
+        DocumentManager documentMgr = documents.getDocumentMgr(document, repository, branch);
+        documentMgr.createFileForDocument(fileDecoded);
     }
 
 
@@ -152,7 +128,7 @@ public class DefaultDocumentsResource {
     @Path("{name}/files")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response uploadFile(@Context HttpServletRequest request, @PathParam("name") String document) throws IOException, URISyntaxException, ServletException, FileUploadException, GitAPIException {
-        Document doc = documents.getDocument(document, repository, branch);
+        DocumentManager documentMgr = documents.getDocumentMgr(document, repository, branch);
         List<ch.olischmid.codola.rest.models.File.FileMeta> fileInfo = new ArrayList<>();
         if(ServletFileUpload.isMultipartContent(request)){
             ServletFileUpload fileUpload = new ServletFileUpload(new DiskFileItemFactory());
@@ -160,7 +136,7 @@ public class DefaultDocumentsResource {
             for (FileItem fileItem : fileItems) {
                 String name = fileItem.getName();
                 long size = fileItem.getSize();
-                documentGIT.addFileForDocument(doc, name, fileItem.getInputStream());
+                documentMgr.addFileForDocument(name, fileItem.getInputStream());
                 String url = "/url";
                 String urlPreview = "/previewUrl";
                 fileInfo.add(new ch.olischmid.codola.rest.models.File.FileMeta(name, size, url, urlPreview));
@@ -174,13 +150,8 @@ public class DefaultDocumentsResource {
     @Path("{name}")
     public Response deleteDocument(@PathParam("name") String document) throws IOException, InterruptedException, GitAPIException {
         String fileDecoded = URLDecoder.decode(document, StandardCharsets.UTF_8.name());
-        Document doc = documents.getDocument(document, repository, branch);
-        if(doc instanceof DefaultDocument){
-            defaultGIT.removeDocument(doc);
-        }
-        else {
-            documentGIT.removeDocument(doc);
-        }
+        DocumentManager documentMgr = documents.getDocumentMgr(document, repository, branch);
+        documentMgr.removeDocument();
         return Response.ok().build();
     }
 
@@ -188,8 +159,8 @@ public class DefaultDocumentsResource {
     @Path("{name}/files/{file}")
     public Response deleteFile(@PathParam("name") String document, @PathParam("file") String file) throws IOException, InterruptedException, GitAPIException {
         String fileDecoded = URLDecoder.decode(file, StandardCharsets.UTF_8.name());
-        Document doc = documents.getDocument(document, repository, branch);
-        documentGIT.removeFileFromDocument(doc, fileDecoded);
+        DocumentManager documentMgr = documents.getDocumentMgr(document, repository, branch);
+        documentMgr.removeFileFromDocument(fileDecoded);
         return Response.ok().build();
     }
 
