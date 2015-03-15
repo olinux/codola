@@ -92,7 +92,7 @@ angular.module('codola_overview', [])
         });
         $scope.add = function () {
             if ($scope.gittype == 'default') {
-                $http.post('rest/documents/default/' + $scope.docname).success(function (data, status, headers, config) {
+                $http.post('rest/documents/default/' + $scope.docname, $scope.maindoc).success(function (data, status, headers, config) {
                     window.location.href = "editor.html?default/" + $scope.docname;
                 }).error(function (data, status, headers, config) {
                     alert("Was not able to add document");

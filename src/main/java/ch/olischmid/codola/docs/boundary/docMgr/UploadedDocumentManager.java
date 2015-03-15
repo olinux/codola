@@ -78,4 +78,9 @@ public class UploadedDocumentManager implements DocumentManager {
     public boolean hasUnPushedChanges() {
         return false;
     }
+
+    @Override
+    public void setAsMainFile(String fileName) throws IOException, GitAPIException {
+        document.setMainFile(fileName);
+    }
 }

@@ -134,4 +134,14 @@ public class GitDocumentManager implements DocumentManager {
         }
     }
 
+    @Override
+    public void setAsMainFile(String fileName) throws IOException, GitAPIException {
+        synchronized (git.getGitLock(document.getRepository())) {
+            git.checkoutBranch(document.getRepository(), document.getBranch());
+            document.setMainFile(fileName);
+            git.getGitRepo(document.getRepository()).add().addFilepattern(Document.CODOLA_PROPERTIES).call();
+            git.commitAllChanges(document.getRepository(), document.getBranch(), null, null);
+        }
+    }
+
 }

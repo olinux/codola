@@ -8,15 +8,16 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
+import java.util.Properties;
 
 /**
  * Created by oli on 27.02.15.
  */
 @Getter
 public class Document {
+
+    public final static String CODOLA_PROPERTIES = ".codola";
 
 
     public static final Document createDocument(String name, String repository, String branch, Path directory, Path buildDirectory) throws IOException, GitAPIException {
@@ -52,7 +53,6 @@ public class Document {
         this.documentType = documentType;
     }
 
-    String mainFile = "main.tex";
     final String name;
     final Path directory;
     final String repository;
@@ -61,7 +61,7 @@ public class Document {
     final DocumentType documentType;
 
     public Path getPathToMainFile(){
-        return getDirectory().resolve(mainFile);
+        return getDirectory().resolve(getMainFile());
     }
 
     public void writeContentOfFile(String path, String content) throws IOException {
@@ -89,4 +89,37 @@ public class Document {
         Files.deleteIfExists(getBuildDirectory().resolve(GIT.TEMPLATE_REPOSITORY));
         FileUtils.deleteDirectory(getBuildDirectory().toFile());
     }
+
+
+    private Path getPropertiesPath(){
+        return getDirectory().resolve(CODOLA_PROPERTIES);
+    }
+
+    private Properties getCodolaProperties() {
+        Properties p = new Properties();
+        try {
+            if(Files.exists(getPropertiesPath())){
+                p.load(Files.newInputStream(getPropertiesPath(), StandardOpenOption.READ));
+            }
+        } catch (IOException e) {
+            //Properties are not readable - we fall back to the mode of non-existent properties.
+        }
+        return p;
+    }
+
+    private void setProperty(String key, String property) throws IOException {
+        Properties codolaProperties = getCodolaProperties();
+        codolaProperties.setProperty(key, property);
+        codolaProperties.store(Files.newBufferedWriter(getPropertiesPath(), StandardCharsets.UTF_8), null);
+    }
+
+    public String getMainFile(){
+        return getCodolaProperties().getProperty("mainFile", "main.tex");
+    }
+
+
+    public void setMainFile(String file) throws IOException {
+        setProperty("mainFile", file);
+    }
+
 }

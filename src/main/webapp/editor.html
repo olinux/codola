@@ -126,19 +126,24 @@
             <li class="sidebar-title"><span></span></li>
         </ul>
         <div class="sidebar-footer">
-            <div class="col-xs-4">
+            <div class="col-xs-3">
                 <button type="button" class="btn btn-sm pull-right" data-toggle="modal"
                         data-target="#fileuploadDialog">
                     <span class="glyphicon glyphicon-upload" aria-hidden="true" title="Upload file"></span>
                 </button>
             </div>
-            <div class="col-xs-4">
+            <div class="col-xs-3">
                 <button type="button" class="btn btn-default btn-sm pull-right  btn-success" data-toggle="modal"
                         data-target="#createFileDialog">
                     <span class="glyphicon glyphicon-plus" aria-hidden="true" title="Create new file"></span>
                 </button>
             </div>
-            <div class="col-xs-4">
+            <div class="col-xs-3">
+                <button type="button" class="btn btn-default btn-sm pull-right  btn-info" data-ng-click="setMainFile()">
+                    <span class="glyphicon glyphicon-book" aria-hidden="true" title="Set main file"></span>
+                </button>
+            </div>
+            <div class="col-xs-3">
                 <button type="button" class="btn btn-default btn-sm pull-right  btn-danger" data-toggle="modal"
                         data-target="#deleteFileDialog">
                     <span class="glyphicon glyphicon-trash" aria-hidden="true" title="Delete file"></span>

@@ -36,4 +36,6 @@ public interface DocumentManager {
     void removeDocument() throws IOException, GitAPIException;
 
     boolean hasUnPushedChanges() throws IOException, GitAPIException;
+
+    void setAsMainFile(String fileName) throws IOException, GitAPIException;
 }

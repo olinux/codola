@@ -6,8 +6,8 @@ import ch.olischmid.codola.docs.boundary.docMgr.DefaultDocumentManager;
 import ch.olischmid.codola.docs.boundary.docMgr.UploadedDocumentManager;
 import ch.olischmid.codola.docs.control.DocumentRepository;
 import ch.olischmid.codola.docs.entity.Document;
-import ch.olischmid.codola.docs.entity.DocumentType;
 import ch.olischmid.codola.docs.entity.DocumentInfo;
+import ch.olischmid.codola.docs.entity.DocumentType;
 import ch.olischmid.codola.latex.control.LaTeX;
 import ch.olischmid.codola.latex.entity.LaTeXBuild;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -104,8 +104,15 @@ public class Documents {
     /**
      * Initializes a new document - in fact, a new branch is created (on base of the current master branch) which is immediately pushed to the remote repo.
      */
-    public void createNewDocument(String document) throws IOException, GitAPIException, URISyntaxException {
+    public void createNewDocument(String document, String mainFile) throws IOException, GitAPIException, URISyntaxException {
        documentRepository.createNewDefaultDocument(document);
+        DocumentManager documentMgr = getDocumentMgr(document, DocumentType.DEFAULT_REPOSITORY, document);
+        documentMgr.setAsMainFile(mainFile);
+        InputStream fileOfDocument = documentMgr.getFileOfDocument(mainFile);
+        if(fileOfDocument==null){
+            documentMgr.createFileForDocument(mainFile);
+        }
+
     }
 
     public String createNewDocumentFromZIP(InputStream inputStream) throws IOException {

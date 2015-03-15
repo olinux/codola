@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.IOException;
+import java.nio.file.Files;
 
 public class DefaultDocumentManager extends GitDocumentManager {
 
@@ -18,6 +19,8 @@ public class DefaultDocumentManager extends GitDocumentManager {
             //Remove the branch on the origin
             git.removeBranchOnOrigin(DocumentType.DEFAULT_REPOSITORY, document.getName());
         }
+        //First detach the template repository - otherwise it will be deleted as well
+        Files.deleteIfExists(document.getBuildDirectory().resolve(GIT.TEMPLATE_REPOSITORY));
         FileUtils.deleteDirectory(document.getBuildDirectory().toFile());
     }
 

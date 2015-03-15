@@ -87,6 +87,15 @@ public class DocumentsResource {
 
 
     @PUT
+    @Path("{name}/mainfile")
+    @Produces("text/plain")
+    public void updateMainFile(String file, @PathParam("name") String document) throws IOException, InterruptedException, GitAPIException {
+        DocumentManager documentMgr = documents.getDocumentMgr(document, repository, branch);
+        documentMgr.setAsMainFile(file);
+    }
+
+
+    @PUT
     @Path("{name}/files/{file}")
     @Produces("text/plain")
     public String updateFile(String content, @PathParam("name") String document, @PathParam("file") String file) throws IOException, InterruptedException, GitAPIException {
@@ -103,8 +112,8 @@ public class DocumentsResource {
 
     @POST
     @Path("{name}")
-    public void createDocument(@PathParam("name") String name) throws IOException, GitAPIException, URISyntaxException {
-        documents.createNewDocument(name);
+    public void createDocument(String mainFile, @PathParam("name") String name) throws IOException, GitAPIException, URISyntaxException {
+        documents.createNewDocument(name, mainFile);
     }
 
     @PUT

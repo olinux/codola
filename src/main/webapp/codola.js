@@ -60,6 +60,16 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
             return undefined;
         };
 
+        $scope.setMainFile = function () {
+            $http.put('rest/documents/' + getIdFromParam() + '/mainfile', encodeURIComponent($scope.currentFile))
+                .success(function (data, status, headers, config) {
+                    $rootScope.$emit('filesChanged');
+                }).
+                error(function (data, status, headers, config) {
+                   alert("Was not able to store mainfile");
+                });
+        };
+
 
         $scope.getFirstRootFile = function () {
             for (var i in $scope.files) {
