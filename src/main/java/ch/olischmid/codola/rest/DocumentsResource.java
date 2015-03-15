@@ -6,8 +6,8 @@ package ch.olischmid.codola.rest;
 
 import ch.olischmid.codola.docs.boundary.DocumentManager;
 import ch.olischmid.codola.docs.boundary.Documents;
+import ch.olischmid.codola.docs.entity.DocumentInfo;
 import ch.olischmid.codola.docs.entity.DocumentType;
-import ch.olischmid.codola.docs.entity.GitDocument;
 import ch.olischmid.codola.git.control.GIT;
 import ch.olischmid.codola.latex.entity.LaTeXBuild;
 import org.apache.commons.fileupload.FileItem;
@@ -54,14 +54,18 @@ public class DocumentsResource {
     }
 
     @GET
-    public List<GitDocument> getDefaultDocuments() throws IOException, GitAPIException {
+    public List<DocumentInfo> getDefaultDocuments() throws IOException, GitAPIException {
         return documents.getDocuments(DocumentType.getTypeByRepository(repository));
     }
 
     @GET
     @Path("{name}")
     public Response getPDF(@PathParam("name") String document) throws IOException, GitAPIException {
-        return Response.ok((Object) documents.getPDF(document).toFile()).type("application/pdf").build();
+        java.nio.file.Path pdf = documents.getPDF(document);
+        if(pdf==null){
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.ok((Object) pdf.toFile()).type("application/pdf").build();
     }
 
 

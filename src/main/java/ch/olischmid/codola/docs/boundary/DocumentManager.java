@@ -34,4 +34,6 @@ public interface DocumentManager {
     List<FileStructure> getFileStructure() throws IOException, GitAPIException;
 
     void removeDocument() throws IOException, GitAPIException;
+
+    boolean hasUnPushedChanges() throws IOException, GitAPIException;
 }

@@ -67,7 +67,7 @@ public class ApplicationResource {
     @Path(CLONETEMPLATEGIT)
     public InstallationState cloneTemplateGIT() throws IOException, InterruptedException, GitAPIException {
         //TODO make configurable
-        git.install("https://github.com/olinux/codola_resources.git", DocumentType.DEFAULT_REPOSITORY);
+        git.install("https://github.com/olinux/codola_resources.git", GIT.TEMPLATE_REPOSITORY);
         return getInstallationState();
     }
 
@@ -75,7 +75,7 @@ public class ApplicationResource {
     @Path(CLONEDEFAULTGIT)
     public InstallationState cloneDefaultGIT() throws IOException, InterruptedException, GitAPIException {
         //TODO make configurable
-        git.install("file:///home/oli/projects/codola/tmp/defaultrepo.git", GIT.TEMPLATE_REPOSITORY);
+        git.install("file:///home/oli/projects/codola/tmp/defaultrepo.git", DocumentType.DEFAULT_REPOSITORY);
         return getInstallationState();
     }
 

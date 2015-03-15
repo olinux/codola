@@ -73,4 +73,9 @@ public class UploadedDocumentManager implements DocumentManager {
     public void removeDocument() throws IOException, GitAPIException {
         document.remove();
     }
+
+    @Override
+    public boolean hasUnPushedChanges() {
+        return false;
+    }
 }

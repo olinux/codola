@@ -1,7 +1,7 @@
 package ch.olischmid.codola.docs.entity;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -13,8 +13,14 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 @Getter
-@AllArgsConstructor
-public class GitDocument {
+public class DocumentInfo {
+
+    public DocumentInfo(String displayName, String fullBranchName, String gitRepository, boolean dedicated){
+        this.displayName = displayName;
+        this.fullBranchName = fullBranchName;
+        this.gitRepository = gitRepository;
+        this.dedicated = dedicated;
+    }
 
     final String displayName;
     final String fullBranchName;
@@ -23,4 +29,7 @@ public class GitDocument {
      */
     final String gitRepository;
     final boolean dedicated;
+
+    @Setter
+    boolean unpushedChanges;
 }

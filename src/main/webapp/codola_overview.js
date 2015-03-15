@@ -58,6 +58,14 @@ angular.module('codola_overview', [])
                 alert("Was not able to detach document");
             });
         }
+        $scope.doRemoveUploaded = function () {
+            $http.delete('rest/documents/uploads/' + $scope.markedFileForRemoval.displayName).success(function (data, status, headers, config) {
+                $scope.loadUploadedDocuments();
+                $('#removeUploadedDoc').modal('hide')
+            }).error(function (data, status, headers, config) {
+                alert("Was not able to remove uploaded document");
+            });
+        }
 
         $scope.remove = function (document) {
             $scope.markedFileForRemoval = document;
@@ -66,6 +74,11 @@ angular.module('codola_overview', [])
         $scope.detach = function (document) {
             $scope.markedFileForRemoval = document;
             $("#detachGitDoc").modal("show");
+        }
+
+        $scope.removeUploaded = function (document) {
+            $scope.markedFileForRemoval = document;
+            $("#removeUploadedDoc").modal("show");
         }
 
 

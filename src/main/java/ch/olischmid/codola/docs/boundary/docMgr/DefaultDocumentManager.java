@@ -2,6 +2,7 @@ package ch.olischmid.codola.docs.boundary.docMgr;
 
 import ch.olischmid.codola.docs.entity.DocumentType;
 import ch.olischmid.codola.git.control.GIT;
+import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.IOException;
@@ -17,7 +18,7 @@ public class DefaultDocumentManager extends GitDocumentManager {
             //Remove the branch on the origin
             git.removeBranchOnOrigin(DocumentType.DEFAULT_REPOSITORY, document.getName());
         }
-        document.remove();
+        FileUtils.deleteDirectory(document.getBuildDirectory().toFile());
     }
 
 }

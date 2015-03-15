@@ -123,8 +123,14 @@ public class GitDocumentManager implements DocumentManager {
 
     @Override
     public void removeDocument() throws IOException, GitAPIException {
-        git.remove(document.getRepository());
         document.remove();
+    }
+
+    @Override
+    public boolean hasUnPushedChanges() throws IOException, GitAPIException {
+        synchronized (git.getGitLock(document.getRepository())) {
+            return git.hasUnPushedChanges(document.getRepository(), document.getBranch());
+        }
     }
 
 }

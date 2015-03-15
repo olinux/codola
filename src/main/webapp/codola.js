@@ -115,6 +115,7 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
                 .success(function (data, status, headers, config) {
                     if(data!==''){
                         $scope.log =  data.replace(/\n/g, "<br/>");
+                        $rootScope.$emit('logAvailable');
                     }
                     // this callback will be called asynchronously
                     // when the response is available
@@ -217,9 +218,14 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
     ]).controller('NavigationController', [
         '$scope', '$rootScope', '$http',
         function ($scope, $rootScope, $http) {
+            $scope.logAvailable=false;
             $scope.refresh = function(){
                 $rootScope.$emit('documentChanged');
             }
+            $rootScope.$on('logAvailable', function (event) {
+                $scope.logAvailable=true;
+            });
         }
+
     ])
 ;

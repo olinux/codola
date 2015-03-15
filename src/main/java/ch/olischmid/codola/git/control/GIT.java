@@ -1,12 +1,12 @@
 package ch.olischmid.codola.git.control;
 
 import ch.olischmid.codola.app.control.Configuration;
-import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.CommitCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NotMergedException;
+import org.eclipse.jgit.lib.BranchTrackingStatus;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
@@ -51,12 +51,6 @@ public class GIT {
         return false;
     }
 
-    public void remove(String repository) throws IOException {
-        Path path = getPath(repository);
-        FileUtils.deleteDirectory(path.toFile());
-    }
-
-
     public Git getGitRepo(String repo) throws IOException, GitAPIException {
         if(gitRepo==null) {
             FileRepositoryBuilder builder = new FileRepositoryBuilder();
@@ -80,6 +74,12 @@ public class GIT {
      */
     public void checkoutBranch(String repository, String branchName) throws IOException, GitAPIException {
         getGitRepo(repository).checkout().setName(branchName).call();
+    }
+
+    public boolean hasUnPushedChanges(String repository, String branchName) throws IOException, GitAPIException {
+        BranchTrackingStatus of = BranchTrackingStatus.of(getGitRepo(repository).getRepository(), branchName);
+        int aheadCount = of.getAheadCount();
+        return aheadCount>0;
     }
 
 

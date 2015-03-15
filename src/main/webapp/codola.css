@@ -137,3 +137,7 @@ ul.sidebar .sidebar-title{
 #showLog .modal-dialog{
     width: 80%;
 }
+
+.btn-space{
+    margin-left:1em;
+}

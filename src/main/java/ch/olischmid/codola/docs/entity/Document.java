@@ -84,6 +84,9 @@ public class Document {
     }
 
     public void remove() throws IOException {
+        FileUtils.deleteDirectory(getDirectory().toFile());
+        //First detach the template repository - otherwise it will be deleted as well
+        Files.deleteIfExists(getBuildDirectory().resolve(GIT.TEMPLATE_REPOSITORY));
         FileUtils.deleteDirectory(getBuildDirectory().toFile());
     }
 }
