@@ -5,6 +5,7 @@ import ch.olischmid.codola.docs.boundary.docMgr.DedicatedDocumentManager;
 import ch.olischmid.codola.docs.boundary.docMgr.DefaultDocumentManager;
 import ch.olischmid.codola.docs.boundary.docMgr.UploadedDocumentManager;
 import ch.olischmid.codola.docs.control.DocumentRepository;
+import ch.olischmid.codola.docs.entity.BranchInfo;
 import ch.olischmid.codola.docs.entity.Document;
 import ch.olischmid.codola.docs.entity.DocumentInfo;
 import ch.olischmid.codola.docs.entity.DocumentType;
@@ -43,6 +44,9 @@ public class Documents {
     @Inject
     LaTeX latex;
 
+    public List<BranchInfo> getBranches(String repository) throws IOException, GitAPIException {
+        return documentRepository.getAllBranches(repository);
+    }
 
     public List<DocumentInfo> getDocuments(DocumentType type) throws IOException, GitAPIException {
         List<DocumentInfo> result;
@@ -61,8 +65,11 @@ public class Documents {
                 break;
         }
         for(DocumentInfo d : result){
-            DocumentManager documentMgr = getDocumentMgr(d.getDisplayName(), d.getGitRepository(), d.getFullBranchName());
-            d.setUnpushedChanges(documentMgr.hasUnPushedChanges());
+            DocumentManager documentMgr = getDocumentMgr(d.getDisplayName(), d.getGitRepository(), d.getCurrentBranch().getName());
+            for (BranchInfo branchInfo : d.getAllBranches()) {
+                documentMgr.checkForUnpushedChanges(branchInfo);
+            }
+            documentMgr.checkForUnpushedChanges(d.getCurrentBranch());
         }
         return result;
     }
@@ -70,7 +77,7 @@ public class Documents {
 
     public DocumentManager getDocumentMgr(String name, String repository, String branch) throws GitAPIException, IOException {
         Path p = configuration.getAbsoluteGitDirectory().resolve(repository);
-        Path buildDirectory = latex.getPathForDocument(name);
+        Path buildDirectory = latex.getPathForDocument(name, branch);
         Document d = Document.createDocument(name, repository, branch, p, buildDirectory);
         DocumentManager mgr = null;
         switch(d.getDocumentType()){
@@ -97,15 +104,15 @@ public class Documents {
         return latex.build(document);
     }
 
-    public Path getPDF(String name) throws IOException {
-        return latex.getPDF(name);
+    public Path getPDF(String document, String branch) throws IOException {
+        return latex.getPDF(document, branch);
     }
 
     /**
      * Initializes a new document - in fact, a new branch is created (on base of the current master branch) which is immediately pushed to the remote repo.
      */
     public void createNewDocument(String document, String mainFile) throws IOException, GitAPIException, URISyntaxException {
-       documentRepository.createNewDefaultDocument(document);
+        documentRepository.createNewDefaultDocument(document);
         DocumentManager documentMgr = getDocumentMgr(document, DocumentType.DEFAULT_REPOSITORY, document);
         documentMgr.setAsMainFile(mainFile);
         InputStream fileOfDocument = documentMgr.getFileOfDocument(mainFile);
@@ -118,5 +125,6 @@ public class Documents {
     public String createNewDocumentFromZIP(InputStream inputStream) throws IOException {
         return documentRepository.createNewDocumentFromZIP(inputStream);
     }
+
 
 }

@@ -12,157 +12,238 @@ function getIdFromParam() {
     }
 }
 
-angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
-    .controller('FirepadController', ['$scope', '$rootScope', '$http', '$sce', function ($scope, $rootScope, $http, $sce) {
-        $rootScope.$on('filesChanged', function (event) {
-            $scope.loadFileList();
-        });
+var module = angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
+    .run(function ($rootScope) {
+        $rootScope.getSelectedBranch = function () {
+            return typeof($rootScope.selectedBranch) == 'undefined' ? '' : '?branch=' + $rootScope.selectedBranch.name;
+        }
+    });
 
 
-        $http.get('rest/app/firebaseUrl').success(function (data, status, headers, config) {
-            $scope.firebaseURL = data;
-            $scope.filterFiles = false;
-            $scope.searchText = '';
-            $scope.loadFileList();
-        }).error(function (data, status, headers, config) {
-            alert('Was not able to get firebase url');
-        });
+module.controller('FirepadController', ['$scope', '$rootScope', '$http', '$sce', function ($scope, $rootScope, $http, $sce) {
+    $rootScope.$on('filesChanged', function (event) {
+        $scope.loadFileList();
+    });
 
-        $http.get('rest/templates/files').success(function (data, status, headers, config) {
-            $scope.templateFiles = data;
-        }).error(function (data, status, headers, config) {
-            alert('Was not able to load templateFiles');
-        });
+    $rootScope.$on('reload', function (event) {
+        $scope.loadFileList();
+    });
 
-        $scope.loadFileList = function () {
-            $http.get('rest/documents/' + getIdFromParam() + '/files').success(function (data, status, headers, config) {
-                $scope.files = data;
-                if ($scope.files.length > 0) {
-                    var loadFile = $scope.getMainFile();
-                    if (typeof loadFile == 'undefined') {
-                        loadFile = $scope.getFirstRootFile();
-                    }
-                    $scope.loadFile(loadFile.name);
+    //Get the firebase URL (only once per  application)
+    $http.get('rest/app/firebaseUrl').success(function (data, status, headers, config) {
+        $scope.firebaseURL = data;
+        $scope.filterFiles = false;
+        $scope.searchText = '';
+        $scope.loadFileList();
+    }).error(function (data, status, headers, config) {
+        alert('Was not able to get firebase url');
+    });
+
+    //Get the template files (only once per application)
+    $http.get('rest/templates/files').success(function (data, status, headers, config) {
+        $scope.templateFiles = data;
+    }).error(function (data, status, headers, config) {
+        alert('Was not able to load templateFiles');
+    });
+
+    $scope.loadFileList = function () {
+        $http.get('rest/documents/' + getIdFromParam() + '/files' + $rootScope.getSelectedBranch()).success(function (data, status, headers, config) {
+            $scope.files = data;
+            if ($scope.files.length > 0) {
+                var loadFile = $scope.getMainFile();
+                if (typeof loadFile == 'undefined') {
+                    loadFile = $scope.getFirstRootFile();
                 }
-            }).error(function (data, status, headers, config) {
-                alert('Something went wrong');
+                $scope.loadFile(loadFile.name);
+            }
+        }).error(function (data, status, headers, config) {
+            alert('Something went wrong');
+        });
+    };
+
+
+    $scope.getMainFile = function () {
+        for (var i in $scope.files) {
+            var file = $scope.files[i];
+            if (!file.directory && file.mainFile) {
+                return file;
+            }
+        }
+        return undefined;
+    };
+
+    $scope.setMainFile = function () {
+        $http.put('rest/documents/' + getIdFromParam() + '/mainfile' + $rootScope.getSelectedBranch(), encodeURIComponent($scope.currentFile))
+            .success(function (data, status, headers, config) {
+                $rootScope.$emit('filesChanged');
+            }).
+            error(function (data, status, headers, config) {
+                alert("Was not able to store mainfile");
             });
-        };
+    };
 
 
-        $scope.getMainFile = function () {
-            for (var i in $scope.files) {
-                var file = $scope.files[i];
-                if (!file.directory && file.mainFile) {
-                    return file;
-                }
+    $scope.getFirstRootFile = function () {
+        for (var i in $scope.files) {
+            var file = $scope.files[i];
+            if (!file.directory && $scope.showFile(file.name)) {
+                return file;
             }
-            return undefined;
-        };
+        }
+    };
 
-        $scope.setMainFile = function () {
-            $http.put('rest/documents/' + getIdFromParam() + '/mainfile', encodeURIComponent($scope.currentFile))
-                .success(function (data, status, headers, config) {
-                    $rootScope.$emit('filesChanged');
-                }).
-                error(function (data, status, headers, config) {
-                   alert("Was not able to store mainfile");
-                });
-        };
+    $scope.fileEndingFilter = [".tex", ".md", ".jpg", ".png", ".gif", ".txt", ".sty"];
 
 
-        $scope.getFirstRootFile = function () {
-            for (var i in $scope.files) {
-                var file = $scope.files[i];
-                if (!file.directory && $scope.showFile(file.name)) {
-                    return file;
-                }
-            }
-        };
-
-        $scope.fileEndingFilter = [".tex", ".md", ".jpg", ".png", ".gif", ".txt", ".sty"];
-
-
-        $scope.showFile = function (file) {
-            if (file.indexOf($scope.searchText) < 0) {
-                return false;
-            }
-            if (!$scope.filterFiles) {
+    $scope.showFile = function (file) {
+        if (file.indexOf($scope.searchText) < 0) {
+            return false;
+        }
+        if (!$scope.filterFiles) {
+            return true;
+        }
+        for (var ending in $scope.fileEndingFilter) {
+            if (file.endsWith($scope.fileEndingFilter[ending])) {
                 return true;
             }
-            for (var ending in $scope.fileEndingFilter) {
-                if (file.endsWith($scope.fileEndingFilter[ending])) {
-                    return true;
-                }
-            }
-            return false;
-        };
+        }
+        return false;
+    };
 
-        $scope.hasFile = function () {
-            return $scope.currentFile !== '';
-        };
+    $scope.hasFile = function () {
+        return $scope.currentFile !== '';
+    };
 
-        $scope.loadTemplateFile = function (file) {
-            $('#editor').empty();
-            $scope.currentFile = file;
-            if (typeof $scope.firepadRef != 'undefined') {
-                $scope.firepadRef.unauth();
-            }
-            $scope.firepadRef = undefined;
-            $http.get('rest/templates/files/' + encodeURIComponent(file)).success(function (data, status, headers, config) {
-                $('#editor').append("<div id=\"readOnlyEditor\"></div>");
-                $('#readOnlyEditor').html($sce.getTrustedHtml(data.replace(/\n/g, "<br/>")));
+    $scope.loadTemplateFile = function (file) {
+        $('#editor').empty();
+        $scope.currentFile = file;
+        if (typeof $scope.firepadRef != 'undefined') {
+            $scope.firepadRef.unauth();
+        }
+        $scope.firepadRef = undefined;
+        $http.get('rest/templates/files/' + encodeURIComponent(file)).success(function (data, status, headers, config) {
+            $('#editor').append("<div id=\"readOnlyEditor\"></div>");
+            $('#readOnlyEditor').html($sce.getTrustedHtml(data.replace(/\n/g, "<br/>")));
+        }).error(function (data, status, headers, config) {
+            alert('Can not load file');
+        });
+    };
+
+    $scope.loadFile = function (file) {
+        $('#editor').empty();
+        $scope.currentFile = file;
+        if (typeof $scope.firepadRef != 'undefined') {
+            $scope.firepadRef.unauth();
+        }
+        $scope.firepadRef = undefined;
+        if (file.endsWith(".jpg") || file.endsWith(".png") || file.endsWith(".gif")) {
+            $('#editor').append("<img src=\"rest/documents/" + getIdFromParam() + "/files/" + encodeURIComponent(file) + "\" class=\"imagePreview\"></img>");
+        }
+        else {
+            $http.get('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent(file) + $rootScope.getSelectedBranch()).success(function (data, status, headers, config) {
+                $('#editor').append("<div id=\"firepad\"></div>");
+                $scope.firepadRef = new Firebase($scope.firebaseURL + getIdFromParam() + "/" + $scope.currentFile.replace(/\./g, "_"));
+                $scope.editor = ace.edit('firepad');
+                $scope.firepad = Firepad.fromACE($scope.firepadRef, $scope.editor, {defaultText: data});
+                $scope.editor.getSession().setMode("ace/mode/latex");
+                $scope.editor.setTheme("ace/theme/eclipse");
+                $rootScope.$emit('documentChanged');
             }).error(function (data, status, headers, config) {
                 alert('Can not load file');
             });
-        };
+        }
+    };
 
-        $scope.loadFile = function (file) {
-            $('#editor').empty();
-            $scope.currentFile = file;
-            if (typeof $scope.firepadRef != 'undefined') {
-                $scope.firepadRef.unauth();
-            }
-            $scope.firepadRef = undefined;
-            if (file.endsWith(".jpg") || file.endsWith(".png") || file.endsWith(".gif")) {
-                $('#editor').append("<img src=\"rest/documents/" + getIdFromParam() + "/files/" + encodeURIComponent(file) + "\" class=\"imagePreview\"></img>");
+    $scope.saveFile = function () {
+
+        $http.put('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent($scope.currentFile) + $rootScope.getSelectedBranch(), $scope.firepad.getText())
+            .success(function (data, status, headers, config) {
+                if (data !== '') {
+                    $scope.log = data.replace(/\n/g, "<br/>");
+                    $rootScope.$emit('logAvailable');
+                }
+                // this callback will be called asynchronously
+                // when the response is available
+                $rootScope.$emit('documentChanged');
+            }).
+            error(function (data, status, headers, config) {
+                // called asynchronously if an error occurs
+                // or server returns response with an error status.
+                alert("Was not able to save the file");
+            });
+    };
+
+    $scope.removeFile = function () {
+        $http.delete('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent($scope.currentFile) + $rootScope.getSelectedBranch())
+            .success(function (data, status, headers, config) {
+                // this callback will be called asynchronously
+                // when the response is available
+                $rootScope.$emit('filesChanged');
+            }).
+            error(function (data, status, headers, config) {
+                // called asynchronously if an error occurs
+                // or server returns response with an error status.
+            });
+    }
+
+    //Register the ctrl-S keyboard shortcut to save the file.
+    $(document).keydown(function (event) {
+        if (!( String.fromCharCode(event.which).toLowerCase() == 's' && event.ctrlKey) && !(event.which == 19)) return true;
+        $scope.saveFile();
+        event.preventDefault();
+        return false;
+    });
+}]);
+
+module.controller('PreviewController', ['$scope', '$rootScope', function ($scope, $rootScope) {
+    $scope.init = function() {
+        $scope.previewData = '';
+        $scope.scroll = 0;
+
+        $scope.preview = function () {
+            $scope.previewData = 'pdf/web/viewer.html?file=../../rest/documents/' + getIdFromParam();
+        }
+    }
+    $rootScope.$on('documentChanged', function (event) {
+        document.getElementById('pdfcanvas').contentWindow.location.reload(true);
+        $scope.preview();
+    });
+    $rootScope.$on('reload', function (event) {
+        $scope.init();
+    });
+    $scope.init();
+}]);
+module.controller('UploadController', [
+    '$scope', '$rootScope', '$http',
+    function ($scope, $rootScope, $http) {
+        $scope.init = function() {
+            $scope.options = {
+                url: 'rest/documents/' + getIdFromParam() + '/files' + $rootScope.getSelectedBranch()
+            };
+            $scope.loadingFiles = false;
+            $scope.queue = [];
+            $scope.$on('fileuploadstop', function (event, files) {
+                $rootScope.$emit('filesChanged');
+            });
+        }
+        $rootScope.$on('reload', function (event) {
+            $scope.init();
+        });
+        $scope.init();
+    }
+]);
+module.controller('CreateController', [
+    '$scope', '$rootScope', '$http',
+    function ($scope, $rootScope, $http) {
+        $scope.createFile = function () {
+            var fileName;
+            if (typeof($scope.path) != 'undefined') {
+                fileName = $scope.path + '/' + $scope.filename;
             }
             else {
-                $http.get('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent(file)).success(function (data, status, headers, config) {
-                    $('#editor').append("<div id=\"firepad\"></div>");
-                    $scope.firepadRef = new Firebase($scope.firebaseURL + getIdFromParam() + "/" + $scope.currentFile.replace(/\./g, "_"));
-                    $scope.editor = ace.edit('firepad');
-                    $scope.firepad = Firepad.fromACE($scope.firepadRef, $scope.editor, {defaultText: data});
-                    $scope.editor.getSession().setMode("ace/mode/latex");
-                    $scope.editor.setTheme("ace/theme/eclipse");
-                    $rootScope.$emit('documentChanged');
-                }).error(function (data, status, headers, config) {
-                    alert('Can not load file');
-                });
+                fileName = $scope.filename;
             }
-        };
-
-        $scope.saveFile = function () {
-
-            $http.put('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent($scope.currentFile), $scope.firepad.getText())
-                .success(function (data, status, headers, config) {
-                    if (data !== '') {
-                        $scope.log = data.replace(/\n/g, "<br/>");
-                        $rootScope.$emit('logAvailable');
-                    }
-                    // this callback will be called asynchronously
-                    // when the response is available
-                    $rootScope.$emit('documentChanged');
-                }).
-                error(function (data, status, headers, config) {
-                    // called asynchronously if an error occurs
-                    // or server returns response with an error status.
-                    alert("Was not able to save the file");
-                });
-        };
-
-        $scope.removeFile = function () {
-            $http.delete('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent($scope.currentFile))
+            $http.post('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent(fileName) + $rootScope.getSelectedBranch())
                 .success(function (data, status, headers, config) {
                     // this callback will be called asynchronously
                     // when the response is available
@@ -172,93 +253,59 @@ angular.module('codola_editor', ['blueimp.fileupload', 'ngSanitize'])
                     // called asynchronously if an error occurs
                     // or server returns response with an error status.
                 });
-        }
+        };
+    }
+]);
 
-        $(document).keydown(function (event) {
-            if (!( String.fromCharCode(event.which).toLowerCase() == 's' && event.ctrlKey) && !(event.which == 19)) return true;
-            $scope.saveFile();
-            event.preventDefault();
-            return false;
-        });
+module.controller('PushController', [
+    '$scope', '$rootScope', '$http',
+    function ($scope, $rootScope, $http) {
+        $scope.push = function () {
+            $http.put('rest/documents/' + getIdFromParam() + $rootScope.getSelectedBranch(), $scope.message)
+                .success(function (data, status, headers, config) {
 
-    }])
-    .controller('PreviewController', ['$scope', '$rootScope', function ($scope, $rootScope) {
-        $scope.previewData = '';
-        $scope.scroll = 0;
-        $rootScope.$on('documentChanged', function (event) {
-            document.getElementById('pdfcanvas').contentWindow.location.reload(true);
-            $scope.preview();
-        });
-        $scope.preview = function () {
-            $scope.previewData = 'pdf/web/viewer.html?file=../../rest/documents/' + getIdFromParam();
+                }).
+                error(function (data, status, headers, config) {
+                    alert("Push failed: " + status);
+                });
         }
-    }]).controller('UploadController', [
-        '$scope', '$rootScope', '$http',
-        function ($scope, $rootScope, $http) {
+        $scope.init = function() {
             $scope.options = {
-                url: 'rest/documents/' + getIdFromParam() + '/files'
+                url: 'rest/documents/' + getIdFromParam() + '/files' + $rootScope.getSelectedBranch()
             };
             $scope.loadingFiles = false;
             $scope.queue = [];
-            $scope.$on('fileuploadstop', function (event, files) {
-                $rootScope.$emit('filesChanged');
-            });
         }
-    ]).controller('CreateController', [
-        '$scope', '$rootScope', '$http',
-        function ($scope, $rootScope, $http) {
-            $scope.createFile = function () {
-                var fileName;
-                if (typeof($scope.path) != 'undefined') {
-                    fileName = $scope.path + '/' + $scope.filename;
-                }
-                else {
-                    fileName = $scope.filename;
-                }
-                $http.post('rest/documents/' + getIdFromParam() + '/files/' + encodeURIComponent(fileName))
-                    .success(function (data, status, headers, config) {
-                        // this callback will be called asynchronously
-                        // when the response is available
-                        $rootScope.$emit('filesChanged');
-                    }).
-                    error(function (data, status, headers, config) {
-                        // called asynchronously if an error occurs
-                        // or server returns response with an error status.
-                    });
-            };
-        }
-    ]).controller('PushController', [
-        '$scope', '$rootScope', '$http',
-        function ($scope, $rootScope, $http) {
-            $scope.push = function () {
-                $http.put('rest/documents/' + getIdFromParam(), $scope.message)
-                    .success(function (data, status, headers, config) {
+        $scope.$on('fileuploadstop', function (event, files) {
+            $rootScope.$emit('filesChanged');
+        });
+        $rootScope.$on('reload', function (event) {
+            $scope.init();
+        });
+        $scope.init();
+    }
+]);
+module.controller('NavigationController', [
+    '$scope', '$rootScope', '$http',
+    function ($scope, $rootScope, $http) {
 
-                    }).
-                    error(function (data, status, headers, config) {
-                        alert("Push failed: " + status);
-                    });
-            }
-            $scope.options = {
-                url: 'rest/documents/' + getIdFromParam() + '/files'
-            };
-            $scope.loadingFiles = false;
-            $scope.queue = [];
-            $scope.$on('fileuploadstop', function (event, files) {
-                $rootScope.$emit('filesChanged');
-            });
+        $scope.refresh = function () {
+            $rootScope.$emit('documentChanged');
         }
-    ]).controller('NavigationController', [
-        '$scope', '$rootScope', '$http',
-        function ($scope, $rootScope, $http) {
+
+        $scope.init = function() {
             $scope.logAvailable = false;
-            $scope.refresh = function () {
-                $rootScope.$emit('documentChanged');
-            }
-            $rootScope.$on('logAvailable', function (event) {
-                $scope.logAvailable = true;
-            });
         }
 
-    ])
+        $rootScope.$on('logAvailable', function (event) {
+            $scope.logAvailable = true;
+        });
+
+        $rootScope.$on('reload', function (event) {
+            $scope.init();
+        });
+        $scope.init();
+    }
+
+])
 ;

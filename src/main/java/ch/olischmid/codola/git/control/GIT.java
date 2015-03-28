@@ -18,11 +18,14 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class GIT {
-    public final static String TEMPLATE_REPOSITORY="templates";
+    public final static String TEMPLATE_REPOSITORY = "templates";
     private static final String TEMPORARY_CODOLA_COMMIT = "CoDoLa change";
-    private static final String GIT_CONFIG_DIRECTORY=".git";
+    private static final String GIT_CONFIG_DIRECTORY = ".git";
     public static final String MASTER_BRANCH_NAME = "master";
     public final static String ORIGIN = "origin";
     private Git gitRepo;
@@ -38,13 +41,12 @@ public class GIT {
     }
 
     public boolean install(String remoteRepo, String repository) throws IOException, GitAPIException {
-        if(!isInstalled(repository)) {
+        if (!isInstalled(repository)) {
             Path path = getPath(repository);
             System.out.println("Cloning from " + remoteRepo + " to " + path.toString());
             Git repo = Git.cloneRepository()
                     .setURI(remoteRepo)
-                    .setDirectory(path.toFile())
-                    .call();
+                    .setDirectory(path.toFile()).call();
             repo.pull().call();
             return true;
         }
@@ -52,7 +54,7 @@ public class GIT {
     }
 
     public Git getGitRepo(String repo) throws IOException, GitAPIException {
-        if(gitRepo==null) {
+        if (gitRepo == null) {
             FileRepositoryBuilder builder = new FileRepositoryBuilder();
             Repository repository = builder.setGitDir(getGitPath(repo).toFile()).readEnvironment().findGitDir().build();
             gitRepo = new Git(repository);
@@ -73,13 +75,26 @@ public class GIT {
      * Checks out the given branch. Important: Make sure, that the invoking context obtains the @link{#gitLock} before invocation.
      */
     public void checkoutBranch(String repository, String branchName) throws IOException, GitAPIException {
-        getGitRepo(repository).checkout().setName(branchName).call();
+        Git gitRepo = getGitRepo(repository);
+        List<Ref> localBranches = gitRepo.branchList().call();
+        for (Ref localBranch : localBranches) {
+            if(localBranch.getName().equals(getFullBranchName(branchName))){
+                gitRepo.checkout().setName(branchName).call();
+                return;
+            }
+        }
+        gitRepo.checkout().setCreateBranch(true).setName(branchName).setStartPoint(ORIGIN+"/"+branchName).call();
+
     }
 
     public boolean hasUnPushedChanges(String repository, String branchName) throws IOException, GitAPIException {
-        BranchTrackingStatus of = BranchTrackingStatus.of(getGitRepo(repository).getRepository(), branchName);
+        BranchTrackingStatus of = BranchTrackingStatus.of(getGitRepo(repository).getRepository(), getFullBranchName(branchName));
+        //There is no remote branch - so our local branch is not pushed and therefore has unpushed changes
+        if(of==null){
+            return true;
+        }
         int aheadCount = of.getAheadCount();
-        return aheadCount>0;
+        return aheadCount > 0;
     }
 
 
@@ -88,9 +103,10 @@ public class GIT {
         RevCommit lastCommit = getLastCommit(repository, branchName);
         boolean amend = lastCommit.getFullMessage().equals(TEMPORARY_CODOLA_COMMIT);
         CommitCommand commitCommand = getGitRepo(repository).commit().setAll(true).setAmend(amend).setMessage(message == null ? TEMPORARY_CODOLA_COMMIT : message);
-        if(user!=null) {
+        if (user != null) {
             commitCommand.setAuthor(new PersonIdent(user, user + "@codola"));
-        };
+        }
+        ;
         commitCommand.call();
     }
 
@@ -98,6 +114,15 @@ public class GIT {
         Ref branch = getGitRepo(repository).getRepository().getRef(branchName);
         Iterable<RevCommit> commits = getGitRepo(repository).log().add(branch.getObjectId()).call();
         return commits.iterator().next();
+    }
+
+    public List<Ref> getBranches(String repository) throws IOException, GitAPIException {
+        Collection<Ref> call = getGitRepo(repository).lsRemote().setHeads(true).call();
+        List<Ref> result = new ArrayList<>();
+        for (Ref ref : call) {
+            result.add(ref);
+        }
+        return result;
     }
 
     public void pushToOrigin(String repository, String branchName) throws IOException, GitAPIException {
@@ -113,7 +138,7 @@ public class GIT {
     }
 
     public void removeBranchOnOrigin(String repository, String branchName) throws IOException, GitAPIException {
-        RefSpec refSpec = new RefSpec().setSource(null).setDestination("refs/heads/"+branchName);
+        RefSpec refSpec = new RefSpec().setSource(null).setDestination(getFullBranchName(branchName));
         getGitRepo(repository).push().setRemote(ORIGIN).setForce(true).setRefSpecs(refSpec).call();
     }
 
@@ -121,5 +146,8 @@ public class GIT {
         return configuration.getAbsoluteGitDirectory().resolve(repository);
     }
 
+    public String getFullBranchName(String simpleBranchName){
+        return "refs/heads/"+simpleBranchName;
+    }
 
 }

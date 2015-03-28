@@ -1,8 +1,9 @@
 package ch.olischmid.codola.docs.control;
 
 import ch.olischmid.codola.app.control.Configuration;
-import ch.olischmid.codola.docs.entity.DocumentType;
+import ch.olischmid.codola.docs.entity.BranchInfo;
 import ch.olischmid.codola.docs.entity.DocumentInfo;
+import ch.olischmid.codola.docs.entity.DocumentType;
 import ch.olischmid.codola.git.control.GIT;
 import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.Git;
@@ -20,10 +21,7 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -38,6 +36,9 @@ public class DocumentRepository {
     @Inject
     Configuration configuration;
 
+    @Inject
+    DocumentUtils documentUtils;
+
     /**
      * @return a list of documents available on the default repository.
      * This method is not synchronized, since this information can be extracted from the git metadata and therefore doesn't have to actually switch branches.
@@ -47,7 +48,7 @@ public class DocumentRepository {
         List<Ref> branches = defaultGitRepo.branchList().call();
         List<DocumentInfo> documents = new ArrayList<>();
         for (Ref branch : branches) {
-            String simpleBranchName = getSimpleBranchName(branch);
+            String simpleBranchName = documentUtils.getSimpleBranchName(branch);
             if (!simpleBranchName.equals(GIT.MASTER_BRANCH_NAME)) {
                 Iterable<RevCommit> commits = defaultGitRepo.log().add(branch.getObjectId()).call();
                 Iterator<RevCommit> commitIterator = commits.iterator();
@@ -55,14 +56,15 @@ public class DocumentRepository {
                     RevCommit next = commitIterator.next();
                     System.out.println(next.getName() + " " + " " + next.getFullMessage() + " " + next.getAuthorIdent().getName());
                 }
-                documents.add(new DocumentInfo(simpleBranchName, branch.getName(), DocumentType.DEFAULT_REPOSITORY, false));
+                BranchInfo branchInfo = new BranchInfo(simpleBranchName);
+                documents.add(new DocumentInfo(simpleBranchName, DocumentType.DEFAULT_REPOSITORY, branchInfo, Arrays.asList(branchInfo), false));
             }
         }
         return documents;
     }
 
 
-    public List<DocumentInfo> getDedicatedDocuments() throws IOException {
+    public List<DocumentInfo> getDedicatedDocuments() throws IOException, GitAPIException {
         File[] files = configuration.getAbsoluteGitDirectory().toFile().listFiles();
         List<DocumentInfo> documents = new ArrayList<>();
         for (File file : files) {
@@ -73,13 +75,21 @@ public class DocumentRepository {
                     case GIT.TEMPLATE_REPOSITORY:
                         break;
                     default:
-                        //FIXME - It doesn't need to be the master branch
-                        documents.add(new DocumentInfo(file.getName(), GIT.MASTER_BRANCH_NAME, file.getName(), true));
+                        String simpleBranchName = documentUtils.getSimpleBranchName(git.getGitRepo(file.getName()).getRepository().getFullBranch());
+                        documents.add(new DocumentInfo(file.getName(), file.getName(), new BranchInfo(simpleBranchName), getAllBranches(file.getName()), true));
                         break;
                 }
             }
         }
         return documents;
+    }
+
+    public List<BranchInfo> getAllBranches(String repository) throws IOException, GitAPIException {
+        List<BranchInfo> branches = new ArrayList<>();
+        for (Ref ref : git.getBranches(repository)) {
+            branches.add(new BranchInfo(documentUtils.getSimpleBranchName(ref)));
+        }
+        return branches;
     }
 
     public List<DocumentInfo> getUploadedDocuments() throws IOException {
@@ -89,24 +99,15 @@ public class DocumentRepository {
             File[] files = path.toFile().listFiles();
             for (File file : files) {
                 if (file.isDirectory()) {
-                    documents.add(new DocumentInfo(file.getName(), null, DocumentType.UPLOADS_REPOSITORY, true));
+                    documents.add(new DocumentInfo(file.getName(), DocumentType.UPLOADS_REPOSITORY, null, Collections.<BranchInfo>emptyList(), true));
                 }
             }
         }
         return documents;
     }
 
-
     private Path getPathForUploadedDocuments() throws IOException {
         return git.getPath(DocumentType.UPLOADS_REPOSITORY);
-    }
-
-
-    /**
-     * @return the actual branch name (excluding prefixes such as "ref", "head", etc)
-     */
-    private String getSimpleBranchName(Ref branch) {
-        return branch.getName().substring(branch.getName().lastIndexOf('/') + 1);
     }
 
     public String createNewDocumentFromZIP(InputStream inputStream) throws IOException {

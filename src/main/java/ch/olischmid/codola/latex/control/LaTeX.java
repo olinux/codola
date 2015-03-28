@@ -64,17 +64,17 @@ public class LaTeX {
         }
     }
 
-    public LaTeXBuild build(String name, String document) throws IOException, InterruptedException {
-        Path buildPath = getLatexBuildFolder().resolve(name);
+    public LaTeXBuild build(String document, String mainFile, String branch) throws IOException, InterruptedException {
+        Path buildPath = getPathForDocument(document, branch);
         String buildLog= null;
         if (Files.exists(buildPath)) {
             Path templateRepoDirectory = buildPath.resolve(GIT.TEMPLATE_REPOSITORY);
             if (!Files.exists(templateRepoDirectory)) {
                 Files.createSymbolicLink(templateRepoDirectory, git.getPath(GIT.TEMPLATE_REPOSITORY));
             }
-            buildLog = shell.executeShellScript(getLatexShellScript(), LATEX_SUBFOLDER, buildPath.toString(), FileEndings.LATEX.appendFileEnding(document));
+            buildLog = shell.executeShellScript(getLatexShellScript(), LATEX_SUBFOLDER, buildPath.toString(), FileEndings.LATEX.appendFileEnding(mainFile));
         }
-        return getLaTeXBuild(name, document, buildLog);
+        return getLaTeXBuild(document, branch, mainFile, buildLog);
     }
 
     public LaTeXBuild build(DocumentManager docMgr) throws IOException, InterruptedException, GitAPIException {
@@ -85,7 +85,7 @@ public class LaTeX {
         }
         Files.createDirectories(buildPath);
         docMgr.copyToBuildDirectory();
-        return build(docMgr.getDocument().getName(), docMgr.getDocument().getMainFile());
+        return build(docMgr.getDocument().getName(), docMgr.getDocument().getMainFile(), docMgr.getDocument().getBranch());
     }
 
 
@@ -98,13 +98,12 @@ public class LaTeX {
         return configuration.getConfigurationRoot().resolve(LATEX_SCRIPT);
     }
 
-    public LaTeXBuild getLaTeXBuild(String id, String document, String buildLog) throws IOException {
-        Path path = getLatexBuildFolder().resolve(id);
-        return new LaTeXBuild(id, document, buildLog, path);
+    public LaTeXBuild getLaTeXBuild(String document, String branch, String mainFile, String buildLog) throws IOException {
+        return new LaTeXBuild(document, mainFile, buildLog, getPathForDocument(document, branch));
     }
 
-    public Path getPDF(String name) throws IOException {
-        File[] files = getLatexBuildFolder().resolve(name).toFile().listFiles(new FilenameFilter() {
+    public Path getPDF(String document, String branch) throws IOException {
+        File[] files = getLatexBuildFolder().resolve(document).resolve(branch).toFile().listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File file, String s) {
                 return s.endsWith(FileEndings.PDF.ending);
@@ -116,8 +115,8 @@ public class LaTeX {
         return null;
     }
 
-    public Path getPathForDocument(String name) throws IOException {
-        return getLatexBuildFolder().resolve(name);
+    public Path getPathForDocument(String document, String branch) throws IOException {
+        return getLatexBuildFolder().resolve(document).resolve(branch);
     }
 
 }

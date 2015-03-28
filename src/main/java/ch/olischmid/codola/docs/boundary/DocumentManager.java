@@ -1,5 +1,6 @@
 package ch.olischmid.codola.docs.boundary;
 
+import ch.olischmid.codola.docs.entity.BranchInfo;
 import ch.olischmid.codola.docs.entity.Document;
 import ch.olischmid.codola.rest.models.FileStructure;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -35,7 +36,8 @@ public interface DocumentManager {
 
     void removeDocument() throws IOException, GitAPIException;
 
-    boolean hasUnPushedChanges() throws IOException, GitAPIException;
+    void checkForUnpushedChanges(BranchInfo branch) throws IOException, GitAPIException;
 
     void setAsMainFile(String fileName) throws IOException, GitAPIException;
+
 }

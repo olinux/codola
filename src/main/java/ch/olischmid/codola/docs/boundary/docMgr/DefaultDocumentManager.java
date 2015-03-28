@@ -24,4 +24,6 @@ public class DefaultDocumentManager extends GitDocumentManager {
         FileUtils.deleteDirectory(document.getBuildDirectory().toFile());
     }
 
+
+
 }

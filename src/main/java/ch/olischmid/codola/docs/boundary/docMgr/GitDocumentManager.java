@@ -1,6 +1,7 @@
 package ch.olischmid.codola.docs.boundary.docMgr;
 
 import ch.olischmid.codola.docs.boundary.DocumentManager;
+import ch.olischmid.codola.docs.entity.BranchInfo;
 import ch.olischmid.codola.docs.entity.Document;
 import ch.olischmid.codola.git.control.GIT;
 import ch.olischmid.codola.rest.models.FileStructure;
@@ -128,9 +129,9 @@ public class GitDocumentManager implements DocumentManager {
     }
 
     @Override
-    public boolean hasUnPushedChanges() throws IOException, GitAPIException {
+    public void checkForUnpushedChanges(BranchInfo branch) throws IOException, GitAPIException {
         synchronized (git.getGitLock(document.getRepository())) {
-            return git.hasUnPushedChanges(document.getRepository(), document.getBranch());
+            branch.setUnpushedChanges(git.hasUnPushedChanges(document.getRepository(), branch.getName()));
         }
     }
 

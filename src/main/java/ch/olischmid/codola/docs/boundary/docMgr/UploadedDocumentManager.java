@@ -1,6 +1,7 @@
 package ch.olischmid.codola.docs.boundary.docMgr;
 
 import ch.olischmid.codola.docs.boundary.DocumentManager;
+import ch.olischmid.codola.docs.entity.BranchInfo;
 import ch.olischmid.codola.docs.entity.Document;
 import ch.olischmid.codola.rest.models.FileStructure;
 import ch.olischmid.codola.utils.FileUtils;
@@ -75,12 +76,13 @@ public class UploadedDocumentManager implements DocumentManager {
     }
 
     @Override
-    public boolean hasUnPushedChanges() {
-        return false;
+    public void checkForUnpushedChanges(BranchInfo branchInfo) {
+        //There is no branch for uploaded documents - so they can't be unpushed... we do nothing.
     }
 
     @Override
     public void setAsMainFile(String fileName) throws IOException, GitAPIException {
         document.setMainFile(fileName);
     }
+
 }

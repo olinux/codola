@@ -55,13 +55,13 @@
                                 <thead><tr><th>Default</th></tr></thead>
                                 <tbody>
                                     <tr ng-repeat="doc in defaultDocuments">
-                                        <td><a href="editor.html?default/{{doc.displayName}}">{{doc.displayName}}</a></td>
+                                        <td><a href="editor.html?default/{{doc.displayName}}/{{doc.currentBranch.name}}">{{doc.displayName}}</a></td>
                                         <td>
                                             <button type="button" class="btn btn-default btn-sm pull-right  btn-danger btn-space">
                                             <span class="glyphicon glyphicon-trash" aria-hidden="true" ng-click="remove(doc)">Remove</span>
                                         </button>
-                                        <button ng-show="doc.unpushedChanges" data-toggle="modal" data-target="#unpushedDialog" type="button" class="btn btn-default btn-sm pull-right  btn-info btn-space"><span>Unpushed changes</span></button>
-                                        <a href="rest/documents/default/{{doc.displayName}}" target="_blank" class="btn btn-default btn-sm pull-right  "><span>Get PDF</span></a>
+                                        <button ng-show="doc.currentBranch.unpushedChanges" data-toggle="modal" data-target="#unpushedDialog" type="button" class="btn btn-default btn-sm pull-right  btn-info btn-space"><span>Unpushed changes</span></button>
+                                        <a href="rest/documents/default/{{doc.displayName}}/{{doc.currentBranch.name}}" target="_blank" class="btn btn-default btn-sm pull-right  "><span>Get PDF</span></a>
 
                                         </td>
                                     </tr>
@@ -71,12 +71,12 @@
                                 <thead><tr><th>Dedicated</th></tr></thead>
                                 <tbody>
                                 <tr ng-repeat="doc in dedicatedDocuments">
-                                    <td><a href="editor.html?{{doc.gitRepository}}/{{doc.displayName}}">{{doc.displayName}}</a></td>
+                                    <td><a href="editor.html?{{doc.gitRepository}}/{{doc.displayName}}/{{doc.currentBranch.name}}">{{doc.displayName}}</a><select ng-model="doc.currentBranch" class="branchChoice" ng-options="branch.name for branch in doc.allBranches track by branch.name"></select></td>
                                     <td><button type="button" class="btn btn-default btn-sm pull-right  btn-warning btn-space">
                                         <span class="glyphicon glyphicon-trash" aria-hidden="true" ng-click="detach(doc)">Detach</span>
                                     </button>
-                                        <button ng-show="doc.unpushedChanges" data-toggle="modal" data-target="#unpushedDialog" type="button" class="btn btn-default btn-sm pull-right  btn-info btn-space"><span>Unpushed changes</span></button>
-                                        <a href="rest/documents/{{doc.gitRepository}}/{{doc.displayName}}" target="_blank" class="btn btn-default btn-sm pull-right "><span>Get PDF</span></a>
+                                        <button ng-show="doc.currentBranch.unpushedChanges" data-toggle="modal" data-target="#unpushedDialog" type="button" class="btn btn-default btn-sm pull-right  btn-info btn-space"><span>Unpushed changes</span></button>
+                                        <a href="rest/documents/{{doc.gitRepository}}/{{doc.displayName}}/{{doc.currentBranch.name}}" target="_blank" class="btn btn-default btn-sm pull-right "><span>Get PDF</span></a>
                                     </td>
                                 </tr>
                                 </tbody>
@@ -171,7 +171,7 @@
                                 <td><button type="button" class="btn btn-default btn-sm pull-right  btn-warning btn-space">
                                     <span class="glyphicon glyphicon-trash" aria-hidden="true" ng-click="removeUploaded(doc)">Remove</span>
                                 </button>
-                                    <a href="rest/documents/uploads/{{doc.displayName}}" target="_blank" class="btn btn-default btn-sm pull-right"><span>Get PDF</span></a>
+                                    <a href="rest/documents/uploads/{{doc.displayName}}/none" target="_blank" class="btn btn-default btn-sm pull-right"><span>Get PDF</span></a>
 
                                 </td>
                             </tr>
