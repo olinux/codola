@@ -1,6 +1,3 @@
-Thi
-
-
 Third-Party Libraries:
 JQuery MIT https://jquery.org/license/
 Bootstrap MIT http://getbootstrap.com/getting-started/#license-faqs
